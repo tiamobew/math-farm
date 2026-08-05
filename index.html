@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ฟาร์มคณิต — ระบบสะสมแต้มการเรียน</title>
 <style>
   :root{
@@ -15,7 +15,8 @@
   body{
     font-family:"TH Sarabun New","Sarabun","Segoe UI",Tahoma,sans-serif;
     background:radial-gradient(1200px 600px at 70% -10%,#24356b 0%,var(--bg1) 55%);
-    color:var(--ink); min-height:100vh; font-size:19px; -webkit-font-smoothing:antialiased;
+    color:var(--ink); min-height:100vh; min-height:100dvh; font-size:19px;
+    -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overflow-x:hidden;
   }
   .wrap{max-width:960px;margin:0 auto;padding:18px}
   .screen{display:none} .screen.active{display:block;animation:fade .3s}
@@ -23,7 +24,8 @@
   h1,h2,h3{font-weight:800;line-height:1.2}
   .accent{color:var(--accent)}
   .muted{color:var(--muted)}
-  button{font-family:inherit;cursor:pointer;border:none;font-size:19px}
+  button{font-family:inherit;cursor:pointer;border:none;font-size:19px;touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent}
   .btn{background:linear-gradient(var(--c),var(--cd));color:#fff;font-weight:800;
     padding:12px 26px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.3);transition:transform .08s}
   .btn:active{transform:translateY(2px)}
@@ -56,6 +58,7 @@
     border-radius:16px;padding:12px 16px;margin-bottom:16px}
   .top .who{flex:1}
   .top .who .nm{font-weight:800;font-size:20px}
+  .topActions{display:flex;align-items:center;gap:8px}
   .avatar{width:60px;height:60px;border-radius:14px;background:#0e1730;display:grid;place-items:center;flex:none}
   .avatar svg{width:52px;height:52px}
   .points{font-weight:900;font-size:22px;color:var(--warn)}
@@ -135,14 +138,15 @@
     opacity:.9;user-select:none}
   .jrow{display:flex;gap:6px;align-items:center}
   .jb{width:52px;height:52px;border-radius:14px;border:none;background:rgba(255,255,255,.85);
-    font-size:22px;font-weight:900;color:#123;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+    font-size:22px;font-weight:900;color:#123;box-shadow:0 4px 10px rgba(0,0,0,.25);touch-action:none}
   .jb:active{transform:scale(.92)}
   .jchop{background:linear-gradient(#ffd44d,#ff9d2e)}
   @media(min-width:760px){.joy{display:none}}       /* ซ่อนจอยบนจอใหญ่ ใช้คีย์บอร์ดแทน */
   /* shop overlay */
   .shopOverlay{position:fixed;inset:0;background:rgba(5,10,25,.75);display:none;place-items:center;z-index:60;padding:16px}
   .shopOverlay.on{display:grid}
-  .shopBox{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;max-width:640px;width:100%}
+  .shopBox{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;max-width:640px;width:100%;
+    max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain}
   .ftabs{display:flex;gap:8px;flex-wrap:wrap}
   .ftabs button{background:#0e1730;border:1px solid var(--line);color:var(--muted);padding:9px 18px;border-radius:10px;font-weight:800}
   .ftabs button.on{background:linear-gradient(#37c26b,#1f9a4f);color:#fff;border-color:transparent}
@@ -155,6 +159,93 @@
   .shopCard button{margin-top:8px;width:100%}
   .shopCard button:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.5)}
   .qText{font-size:34px;font-weight:900;text-align:center;margin:14px 0;color:var(--accent)}
+  .rotateTip{display:none}
+
+  /* ---------- PHONE / TOUCH ---------- */
+  @media(max-width:759px){
+    .wrap{padding:10px}
+    .card{padding:16px;border-radius:14px}
+    .btn{min-height:44px;padding:10px 16px}
+    .btn.sm{min-height:42px;padding:8px 12px;font-size:16px}
+    #authScreen .wrap{padding-top:max(10px,env(safe-area-inset-top))}
+    #authScreen .heroBot{padding:2px}
+    #authScreen .heroBot svg{width:132px;height:145px}
+    .brand h1{font-size:27px}
+    .top{flex-wrap:wrap;gap:10px;padding:10px;margin-bottom:10px}
+    .avatar{width:52px;height:52px}
+    .avatar svg{width:46px;height:46px}
+    .top .who{min-width:130px}
+    .top .who .nm{font-size:18px}
+    .points{font-size:20px}
+    .topActions{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+    .topActions .btn{width:100%;padding:8px 5px;font-size:15px;white-space:nowrap}
+    .mission{padding:12px;align-items:flex-start}
+    .mission .ic{font-size:29px}
+    .mission .btn{min-height:42px}
+    .badges{justify-content:center}
+    .badge{width:88px}
+    .lbRow{gap:8px;padding:10px}
+    .lbRank{width:30px}
+
+    #farmScreen.active{height:100vh;height:100dvh;min-height:0}
+    .islandStage{min-height:0;height:100%;padding-top:112px;padding-bottom:max(6px,env(safe-area-inset-bottom))}
+    #island{width:100%;max-width:none;height:auto}
+    .hudTop{top:max(6px,env(safe-area-inset-top));left:6px;right:6px;display:flex;
+      flex-direction:column;align-items:stretch;gap:5px}
+    .hudGroup{gap:5px;flex-wrap:nowrap}
+    .hudGroup:first-child{justify-content:space-between}
+    .hudGroup:last-child{justify-content:flex-end}
+    .hudTop .btn.sm,.subjectSel{min-height:38px;padding:6px 9px;font-size:14px;border-radius:9px}
+    .subjectSel{min-width:0;max-width:175px}
+    .coinChip{padding:5px 9px;font-size:15px}
+    .hudHint{bottom:max(4px,env(safe-area-inset-bottom));padding:4px 8px;border-radius:9px;
+      width:max-content;max-width:calc(100% - 12px);font-size:12px;line-height:1.2}
+    .joy{bottom:max(43px,calc(env(safe-area-inset-bottom) + 38px));left:8px;gap:4px}
+    .jrow{gap:4px}
+    .jb{width:50px;height:50px;border-radius:13px;font-size:21px}
+    .shopOverlay{padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom))}
+    .shopBox{padding:14px;border-radius:14px;max-height:calc(100dvh - 16px)}
+    .shopGrid{gap:8px}
+    .shopCard{padding:9px}
+    .shopCard .pe{font-size:40px}
+    .ftabs button{min-height:42px;padding:7px 10px}
+    .qText{font-size:27px}
+    .modal .card,[id$="Modal"] .card{max-height:calc(100dvh - 16px)!important;overflow-y:auto}
+  }
+  @media(max-width:370px){
+    .topActions{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .hudTop .btn.sm,.subjectSel{font-size:13px;padding:5px 7px}
+    .coinChip{font-size:14px;padding:5px 7px}
+    .jb{width:46px;height:46px}
+    .shopGrid{grid-template-columns:1fr}
+  }
+  @media(max-width:759px) and (orientation:portrait){
+    .rotateTip{display:block;position:absolute;right:8px;bottom:max(48px,calc(env(safe-area-inset-bottom) + 43px));
+      max-width:155px;background:rgba(5,10,25,.72);color:#fff;padding:6px 9px;border-radius:10px;
+      font-size:12px;line-height:1.2;text-align:center;pointer-events:none}
+  }
+  @media(max-width:759px) and (orientation:landscape){
+    .islandStage{padding-top:82px}
+    #island{width:auto;height:100%;max-height:100%;aspect-ratio:3/2}
+    .hudTop{flex-direction:row;align-items:flex-start}
+    .hudGroup:last-child{flex-wrap:wrap}
+    .rotateTip{display:none}
+  }
+  /* โทรศัพท์แนวนอนบางรุ่นมีความกว้างเกิน 760px แต่ความสูงยังน้อย */
+  @media(max-height:520px) and (orientation:landscape){
+    #farmScreen.active{height:100vh;height:100dvh;min-height:0}
+    .islandStage{min-height:0;height:100%;padding-top:72px}
+    #island{width:auto;height:100%;max-width:none;max-height:100%;aspect-ratio:3/2}
+    .hudTop{top:max(4px,env(safe-area-inset-top));left:6px;right:6px;align-items:flex-start;gap:5px}
+    .hudGroup{gap:5px}
+    .hudTop .btn.sm,.subjectSel{min-height:36px;padding:5px 8px;font-size:13px}
+    .coinChip{padding:4px 8px;font-size:14px}
+    .joy{display:flex;left:max(8px,env(safe-area-inset-left));bottom:max(34px,calc(env(safe-area-inset-bottom) + 30px));gap:3px}
+    .jrow{gap:3px}
+    .jb{width:44px;height:44px;border-radius:12px;font-size:19px}
+    .hudHint{bottom:max(3px,env(safe-area-inset-bottom));padding:3px 8px;font-size:11px}
+    .rotateTip{display:none}
+  }
 </style>
 </head>
 <body>
@@ -212,11 +303,13 @@
         <div class="points">⭐ <span id="topPoints">0</span></div>
         <div class="muted" style="font-size:13px">แต้มสะสม</div>
       </div>
-      <button class="btn ghost sm" onclick="showScreen('farmScreen')">🌳 เลี้ยงสัตว์</button>
-      <button class="btn ghost sm" onclick="showScreen('leaderboardScreen')">🏆 อันดับ</button>
-      <button class="btn ghost sm" onclick="showScreen('customizeScreen')">🎨 ปรับแต่ง</button>
-      <button class="btn ghost sm" id="muteBtn" onclick="toggleSound()" title="เปิด/ปิดเสียง">🔊</button>
-      <button class="btn ghost sm" onclick="logout()">ออก</button>
+      <div class="topActions">
+        <button class="btn ghost sm" onclick="showScreen('farmScreen')">🌳 เลี้ยงสัตว์</button>
+        <button class="btn ghost sm" onclick="showScreen('leaderboardScreen')">🏆 อันดับ</button>
+        <button class="btn ghost sm" onclick="showScreen('customizeScreen')">🎨 ปรับแต่ง</button>
+        <button class="btn ghost sm" id="muteBtn" onclick="toggleSound()" title="เปิด/ปิดเสียง">🔊</button>
+        <button class="btn ghost sm" onclick="logout()">ออก</button>
+      </div>
     </div>
 
     <div class="card" style="margin-bottom:16px">
@@ -298,6 +391,7 @@
       </div>
     </div>
     <div class="hudHint">🕹️ ใช้ปุ่มลูกศร/WASD เดิน • หรือแตะพื้นเพื่อเดินไป • เดินชนต้นไม้แล้วกด <b>Space</b> เพื่อตัด</div>
+    <div class="rotateTip">📱 หมุนโทรศัพท์แนวนอน จะเห็นฟาร์มกว้างและเล่นสะดวกขึ้น</div>
     <div class="joy" id="joy">
       <button class="jb" data-k="ArrowUp">▲</button>
       <div class="jrow">
