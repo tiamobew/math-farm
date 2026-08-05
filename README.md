@@ -4,7 +4,7 @@
 
 ## รหัสที่ใช้
 
-- รหัสสมัครผู้เรียน: `FARM-STUDENT-2026`
+- รหัสสมัครผู้เรียน: `1234`
 - รหัส Admin: `044441300`
 - หน้า Admin: `admin.html`
 
@@ -28,4 +28,3 @@
 4. ที่ **Build and deployment** เลือก **Deploy from a branch**
 5. เลือก branch `main` และโฟลเดอร์ `/ (root)` แล้วกด **Save**
 6. รอประมาณ 1–3 นาที แล้วเปิด URL ที่ GitHub แสดง
-
