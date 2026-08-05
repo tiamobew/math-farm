@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ฟาร์มคณิต — หน้าจัดการระบบ (แอดมิน)</title>
+<style>
+  :root{--bg1:#0f1830;--card:#182545;--line:#2a3d6b;--ink:#eaf1ff;--muted:#9fb2d8;
+    --accent:#5ef2c6;--c:#4a90ff;--cd:#2f6fdc;--good:#37c26b;--warn:#ffcf4d;--bad:#ff6b6b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"TH Sarabun New","Sarabun","Segoe UI",Tahoma,sans-serif;
+    background:radial-gradient(1200px 600px at 70% -10%,#24356b 0%,var(--bg1) 55%);color:var(--ink);
+    min-height:100vh;font-size:18px}
+  .wrap{max-width:1080px;margin:0 auto;padding:18px}
+  h1,h2,h3{font-weight:800} .muted{color:var(--muted)} .accent{color:var(--accent)}
+  button{font-family:inherit;cursor:pointer;border:none;font-size:17px}
+  .btn{background:linear-gradient(var(--c),var(--cd));color:#fff;font-weight:800;padding:10px 20px;
+    border-radius:10px;box-shadow:0 5px 14px rgba(0,0,0,.3)}
+  .btn.ghost{background:transparent;border:2px solid var(--line);color:var(--ink);box-shadow:none}
+  .btn.sm{padding:6px 12px;font-size:15px;border-radius:8px}
+  .btn.danger{background:linear-gradient(#ff7a7a,#e64848)}
+  input,select{font-family:inherit;font-size:17px;width:100%;padding:10px 12px;border-radius:10px;
+    border:2px solid var(--line);background:#0e1730;color:var(--ink);outline:none}
+  input:focus{border-color:var(--c)}
+  label{display:block;margin:8px 0 4px;color:var(--muted);font-size:15px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;
+    box-shadow:0 14px 34px rgba(0,0,0,.32)}
+  .screen{display:none}.screen.active{display:block}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+
+  /* login */
+  #loginScreen .card{max-width:400px;margin:60px auto;text-align:center}
+  .logo{font-size:46px}
+  .msg{min-height:20px;font-size:15px;margin-top:6px}.msg.err{color:var(--bad)}
+
+  /* topbar */
+  .top{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .top h1{flex:1;font-size:24px}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+  @media(min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
+  .stat .n{font-size:30px;font-weight:900;color:var(--accent)} .stat .l{color:var(--muted);font-size:15px}
+
+  /* tabs */
+  .tabbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .tabbar button{background:#0e1730;border:1px solid var(--line);color:var(--muted);padding:9px 18px;
+    border-radius:10px;font-weight:700}
+  .tabbar button.on{background:linear-gradient(var(--c),var(--cd));color:#fff;border-color:transparent}
+  .pane{display:none}.pane.on{display:block}
+
+  /* table */
+  .tbl{width:100%;border-collapse:collapse;font-size:16px}
+  .tbl th,.tbl td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  .tbl th{color:var(--muted);font-size:14px;position:sticky;top:0;background:var(--card)}
+  .tbl tr:hover td{background:#0e1730}
+  .tblwrap{overflow:auto;max-height:60vh;border:1px solid var(--line);border-radius:12px}
+  .dot{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:6px}
+  .rank{font-weight:900;color:var(--warn)}
+
+  /* mission editor */
+  .mrow{display:flex;gap:10px;align-items:center;background:#0e1730;border:1px solid var(--line);
+    border-radius:12px;padding:12px;margin-bottom:10px}
+  .mrow .ic{font-size:26px}.mrow .t{flex:1;font-weight:700}.mrow .pt{color:var(--warn);font-weight:800}
+  .subjTag{display:inline-block;background:#1f9a4f;color:#fff;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;margin-left:6px;vertical-align:middle}
+
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(5,10,25,.72);display:none;place-items:center;z-index:50;padding:16px}
+  .modal.on{display:grid}
+  .modal .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;max-width:440px;width:100%}
+  .modeTag{position:fixed;bottom:10px;right:12px;font-size:13px;color:var(--muted);
+    background:rgba(0,0,0,.35);padding:4px 10px;border-radius:8px}
+  .evGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
+  @media(min-width:600px){.evGrid{grid-template-columns:repeat(3,1fr)}}
+  @media(min-width:900px){.evGrid{grid-template-columns:repeat(4,1fr)}}
+  .evCard{background:#0e1730;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .evCard img{width:100%;height:130px;object-fit:cover;cursor:pointer;display:block;background:#0a1226}
+  .evCard .evInfo{padding:8px 10px;font-size:14px}
+  .evCard .evInfo b{display:block}
+  .evCard .evInfo .evMeta{color:var(--muted);font-size:12px}
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;place-items:center;z-index:80;padding:20px}
+  .lightbox.on{display:grid}
+  .lightbox img{max-width:95%;max-height:90vh;border-radius:12px}
+  .lightbox .x{position:absolute;top:16px;right:20px;font-size:34px;color:#fff;cursor:pointer;font-weight:800}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<section id="loginScreen" class="screen active">
+  <div class="card">
+    <div class="logo">🛠️</div>
+    <h1>หน้าจัดการระบบ (Admin)</h1>
+    <p class="muted">ฟาร์มคณิต — สำหรับคุณครู/ผู้ดูแล</p>
+    <label style="text-align:left;margin-top:16px">รหัส PIN แอดมิน</label>
+    <input id="pin" type="password" onkeydown="if(event.key==='Enter')adminLogin()">
+    <div id="loginMsg" class="msg err"></div>
+    <button class="btn" style="width:100%;margin-top:10px" onclick="adminLogin()">เข้าสู่ระบบ</button>
+    <p class="muted" style="margin-top:14px;font-size:14px">รุ่น GitHub Pages จัดการข้อมูลที่บันทึกอยู่ในเบราว์เซอร์เครื่องนี้</p>
+    <p style="margin-top:6px"><a href="./index.html" class="accent" style="font-size:14px">← กลับหน้าผู้เรียน</a></p>
+  </div>
+</section>
+
+<!-- ===== DASHBOARD ===== -->
+<section id="dashScreen" class="screen">
+  <div class="wrap">
+    <div class="top">
+      <span style="font-size:28px">🛠️</span>
+      <h1>จัดการระบบ ฟาร์มคณิต</h1>
+      <button class="btn ghost sm" onclick="refreshAll()">↻ รีเฟรช</button>
+      <button class="btn ghost sm" onclick="adminLogout()">ออกจากระบบ</button>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="tabbar">
+      <button class="on" data-tab="users" onclick="tab('users')">👦 ผู้เรียน</button>
+      <button data-tab="stats" onclick="tab('stats')">📊 สถิติ/อันดับ</button>
+      <button data-tab="missions" onclick="tab('missions')">🎯 จัดการภารกิจ</button>
+      <button data-tab="questions" onclick="tab('questions')">❓ คำถามคณิต</button>
+      <button data-tab="shop" onclick="tab('shop')">🛒 ราคาร้านค้า</button>
+      <button data-tab="evidence" onclick="tab('evidence')">🖼️ หลักฐานกิจกรรม</button>
+      <button data-tab="export" onclick="tab('export')">📤 ส่งออกข้อมูล</button>
+    </div>
+
+    <!-- USERS -->
+    <div class="pane on" id="pane-users">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;margin-bottom:10px">
+          <h2>รายชื่อผู้เรียน</h2>
+          <input id="search" placeholder="ค้นหาชื่อ/username/ชั้น" style="max-width:280px" oninput="renderUsers()">
+        </div>
+        <div class="tblwrap">
+          <table class="tbl">
+            <thead><tr><th>#</th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>เลขที่</th><th>Username</th>
+              <th>ตัวละคร</th><th>ระดับ</th><th>แต้ม</th><th>เหรียญ</th><th>จัดการ</th></tr></thead>
+            <tbody id="userRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="pane" id="pane-stats">
+      <div class="card">
+        <h2>🏆 อันดับผู้เรียน (แต้มสูงสุด)</h2>
+        <div class="tblwrap" style="margin-top:10px">
+          <table class="tbl"><thead><tr><th>อันดับ</th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>แต้ม</th></tr></thead>
+          <tbody id="rankRows"></tbody></table>
+        </div>
+        <h2 style="margin-top:20px">📊 กิจกรรมภารกิจ (นับครั้งที่ทำสำเร็จ)</h2>
+        <div id="missionStats" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- MISSIONS -->
+    <div class="pane" id="pane-missions">
+      <div class="card">
+        <h2>เพิ่มภารกิจใหม่</h2>
+        <div class="row" style="margin:10px 0">
+          <input id="nm_icon" placeholder="ไอคอน (อิโมจิ)" style="max-width:120px" value="🎯">
+          <input id="nm_title" placeholder="ชื่อภารกิจ" style="flex:1;min-width:180px">
+          <input id="nm_points" type="number" placeholder="แต้ม" style="max-width:110px" value="10">
+          <button class="btn" onclick="addMission()">+ เพิ่ม</button>
+        </div>
+        <h2 style="margin-top:14px">ภารกิจทั้งหมด</h2>
+        <div id="missionEditor" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- QUESTIONS (โจทย์คณิตของเกมเลี้ยงสัตว์) -->
+    <div class="pane" id="pane-questions">
+      <div class="card">
+        <h2>เพิ่มโจทย์ (ทีละข้อ)</h2>
+        <p class="muted" style="margin:6px 0 10px">พิมพ์คำถามและคำตอบในช่องแยกกัน แล้วกดปุ่ม “เพิ่มโจทย์” ด้านล่าง</p>
+        <label>คำถาม</label>
+        <input id="nq_question" placeholder="เช่น 12 × 3 = ?  หรือ  เมืองหลวงของไทยคือ"
+          onkeydown="if(event.key==='Enter')document.getElementById('nq_answer').focus()">
+        <div class="row" style="margin-top:8px">
+          <div style="flex:2;min-width:140px"><label>คำตอบ</label>
+            <input id="nq_answer" placeholder="เช่น 36  หรือ  กรุงเทพ"
+              onkeydown="if(event.key==='Enter')addQuestion()"></div>
+          <div style="flex:1;min-width:120px"><label>วิชา</label>
+            <input id="nq_subject" list="subjectList" placeholder="วิชา" value="คณิตศาสตร์"></div>
+          <div style="width:100px"><label>เหรียญ</label>
+            <input id="nq_coins" type="number" value="25"></div>
+        </div>
+        <datalist id="subjectList"></datalist>
+        <button class="btn" style="margin-top:12px" onclick="addQuestion()">➕ เพิ่มโจทย์</button>
+
+        <details style="margin:10px 0;background:#0e1730;border:1px solid var(--line);border-radius:12px;padding:12px">
+          <summary style="cursor:pointer;font-weight:800">📥 นำเข้าหลายข้อพร้อมกัน (สำหรับใส่ทีละ 100–500 ข้อ)</summary>
+          <p class="muted" style="margin:8px 0">วางทีละบรรทัด รูปแบบ: <b>โจทย์ | คำตอบ | เหรียญ | วิชา</b> (เหรียญ/วิชาใส่หรือไม่ก็ได้ — เริ่มต้น 25 เหรียญ / คณิตศาสตร์) — ใช้ | หรือ , คั่นก็ได้</p>
+          <textarea id="q_bulk" rows="6" style="width:100%;font-family:Consolas,monospace"
+            placeholder="7 + 8 = ? | 15 | 25&#10;12 × 3 = ? | 36&#10;สามเหลี่ยมมีกี่ด้าน, 3"></textarea>
+          <button class="btn" style="margin-top:8px" onclick="bulkAddQuestions()">นำเข้าโจทย์</button>
+          <span id="bulkMsg" class="muted" style="margin-left:10px"></span>
+
+          <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">
+            <p class="muted" style="margin-bottom:8px">📄 หรือนำเข้าจาก <b>ไฟล์ CSV</b> (คอลัมน์: โจทย์, คำตอบ, เหรียญ, วิชา) — เปิด/บันทึกจาก Excel หรือ Google Sheets ได้</p>
+            <div class="row">
+              <label class="btn ghost sm" style="cursor:pointer">📂 เลือกไฟล์ CSV
+                <input type="file" id="q_csv" accept=".csv,text/csv" style="display:none" onchange="importCsv(event)"></label>
+              <button class="btn ghost sm" onclick="downloadCsvTemplate()">⬇ ดาวน์โหลดไฟล์ตัวอย่าง</button>
+              <span id="csvMsg" class="muted"></span>
+            </div>
+          </div>
+        </details>
+
+        <div class="row" style="justify-content:space-between;align-items:center;margin-top:8px">
+          <h2>โจทย์ทั้งหมด: <span class="accent" id="q_count">0</span> ข้อ</h2>
+          <div class="row">
+            <select id="q_subjectFilter" onchange="renderQuestionEditor()" style="max-width:170px"></select>
+            <input id="q_search" placeholder="ค้นหาโจทย์/คำตอบ" style="max-width:200px" oninput="renderQuestionEditor()">
+          </div>
+        </div>
+        <div id="questionEditor" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- SHOP -->
+    <div class="pane" id="pane-shop">
+      <div class="card">
+        <h2>🛒 จัดการราคาร้านค้า</h2>
+        <p class="muted" style="margin:6px 0 12px">ราคาที่บันทึกจะถูกใช้ตรวจสอบตอนซื้อจริงจากฝั่งเซิร์ฟเวอร์ กำหนดได้ตั้งแต่ 0–100,000,000 เหรียญ</p>
+        <div class="tblwrap">
+          <table class="tbl">
+            <thead><tr><th>ประเภท</th><th>สินค้า</th><th>รหัส</th><th>ราคา (เหรียญ)</th><th>จัดการ</th></tr></thead>
+            <tbody id="shopRows"></tbody>
+          </table>
+        </div>
+        <div id="shopMsg" class="msg"></div>
+      </div>
+    </div>
+
+    <!-- EVIDENCE (ภาพหลักฐานการทำกิจกรรม) -->
+    <div class="pane" id="pane-evidence">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2>🖼️ ภาพหลักฐานการทำกิจกรรม</h2>
+          <input id="ev_search" placeholder="ค้นหาชื่อ/ภารกิจ" style="max-width:260px" oninput="renderEvidence()">
+        </div>
+        <p class="muted" style="margin:6px 0">นักเรียนแนบภาพก่อนรับแต้มทุกครั้ง — คลิกที่ภาพเพื่อดูขนาดใหญ่</p>
+        <div id="evidenceGrid" class="evGrid"></div>
+      </div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="pane" id="pane-export">
+      <div class="card">
+        <h2>📤 ส่งออกข้อมูล (CSV เปิดด้วย Excel ได้)</h2>
+        <p class="muted" style="margin:10px 0">ไฟล์ CSV รองรับภาษาไทย (UTF-8 BOM)</p>
+        <div class="row">
+          <button class="btn" onclick="exportUsers()">⬇ รายชื่อผู้เรียน + แต้ม</button>
+          <button class="btn" onclick="exportLog()">⬇ ประวัติการทำภารกิจ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- edit user modal -->
+<div class="modal" id="editModal">
+  <div class="box">
+    <h2>แก้ไขข้อมูลผู้เรียน</h2>
+    <input type="hidden" id="ed_user">
+    <label>ชื่อ-สกุล</label><input id="ed_name">
+    <div class="row"><div style="flex:2"><label>ชั้น/ห้อง</label><input id="ed_cls"></div>
+      <div style="flex:1"><label>เลขที่</label><input id="ed_no"></div></div>
+    <div class="row"><div style="flex:1"><label>แต้มสะสม</label><input id="ed_points" type="number"></div>
+      <div style="flex:1"><label>เหรียญ 🪙</label><input id="ed_coins" type="number"></div></div>
+    <div class="row" style="margin-top:14px;justify-content:space-between">
+      <button class="btn ghost sm" onclick="resetPass()">🔑 ตั้งรหัสผ่านใหม่</button>
+      <div class="row">
+        <button class="btn ghost" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn" onclick="saveUser()">บันทึก</button>
+      </div>
+    </div>
+    <div id="edMsg" class="msg err"></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('on')">
+  <span class="x">✕</span><img id="lightboxImg" src="" alt="">
+</div>
+
+<div class="modeTag" id="modeTag"></div>
+
+<script>
+/* ====== CONFIG (ให้ตรงกับ index.html) ====== */
+const CONFIG = { GAS_URL: "" }; // GitHub Pages: ใช้ localStorage ร่วมกับ index.html
+let PIN = "";
+
+/* ระดับ (ให้ตรงกับ index.html) */
+const LEVELS=[
+  {min:0,name:"มือใหม่หัดโค้ด",icon:"🐣"},{min:50,name:"นักเรียนขยัน",icon:"📗"},
+  {min:120,name:"นักสำรวจความรู้",icon:"🧭"},{min:250,name:"นักคิดวิเคราะห์",icon:"🧠"},
+  {min:450,name:"ยอดนักเรียน",icon:"🏅"},{min:700,name:"ปรมาจารย์โค้ดบอท",icon:"👑"},
+];
+function levelOf(pts){let i=0;LEVELS.forEach((l,j)=>{if(pts>=l.min)i=j});return {n:i+1,...LEVELS[i]};}
+function levelLabel(pts){const l=levelOf(pts||0);return `${l.icon} Lv${l.n} ${l.name}`;}
+const SUBJECTS=["คณิตศาสตร์","วิทยาศาสตร์","ภาษาไทย","ภาษาอังกฤษ","สังคมศึกษา"];
+const DEFAULT_QUESTIONS=[
+  {id:"q1",question:"7 + 8 = ?",answer:"15",coins:25,subject:"คณิตศาสตร์"},{id:"q2",question:"12 × 3 = ?",answer:"36",coins:25,subject:"คณิตศาสตร์"},
+  {id:"q3",question:"45 ÷ 9 = ?",answer:"5",coins:25,subject:"คณิตศาสตร์"},{id:"q4",question:"25 − 17 = ?",answer:"8",coins:25,subject:"คณิตศาสตร์"},
+  {id:"q5",question:"6 × 7 = ?",answer:"42",coins:25,subject:"คณิตศาสตร์"},{id:"q6",question:"9 + 15 = ?",answer:"24",coins:25,subject:"คณิตศาสตร์"},
+  {id:"q7",question:"100 − 64 = ?",answer:"36",coins:25,subject:"คณิตศาสตร์"},{id:"q8",question:"8 × 8 = ?",answer:"64",coins:25,subject:"คณิตศาสตร์"},
+];
+const DEFAULT_SHOP=[
+  {type:"pets",id:"chicken",name:"ไก่",emoji:"🐔",price:500},
+  {type:"pets",id:"duck",name:"เป็ด",emoji:"🦆",price:800},
+  {type:"pets",id:"fish",name:"ปลา",emoji:"🐟",price:1000},
+  {type:"pets",id:"pig",name:"หมู",emoji:"🐷",price:1500},
+  {type:"decor",id:"fence",name:"รั้วไม้ (ต่อช่อง)",emoji:"🪵",price:3000},
+  {type:"decor",id:"flower",name:"สวนดอกไม้",emoji:"🌷",price:4000},
+  {type:"decor",id:"statue",name:"รูปปั้น",emoji:"🗿",price:6000},
+  {type:"decor",id:"fountain",name:"น้ำพุ",emoji:"⛲",price:8000},
+  {type:"decor",id:"house",name:"บ้าน",emoji:"🏠",price:10000},
+];
+
+/* ====== API layer ====== */
+function callAppsScript(action,payload){
+  return new Promise(resolve=>{
+    google.script.run
+      .withSuccessHandler(data=>resolve(data||{ok:false,error:"เซิร์ฟเวอร์ไม่ส่งข้อมูลกลับมา"}))
+      .withFailureHandler(err=>resolve({ok:false,error:(err&&err.message)||"เชื่อมต่อเซิร์ฟเวอร์ไม่ได้"}))
+      .route(action,payload);
+  });
+}
+async function api(action, payload={}){
+  const request={action,pin:PIN,...payload};
+  if(window.google && google.script && google.script.run)
+    return await callAppsScript(action,request);
+  if(CONFIG.GAS_URL){
+    try{
+      const res=await fetch(CONFIG.GAS_URL,{method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify(request),redirect:"follow"});
+      return await res.json();
+    }catch(err){ return {ok:false,error:"เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาตรวจ URL และการ Deploy"}; }
+  }
+  return offlineAdmin(action,payload);
+}
+/* offline: อ่าน/เขียน localStorage เดียวกับ index.html */
+const OFFLINE_PIN="044441300";
+const DB={
+  users(){return JSON.parse(localStorage.getItem("cb_users")||"[]")},
+  setUsers(u){localStorage.setItem("cb_users",JSON.stringify(u))},
+  missions(){return JSON.parse(localStorage.getItem("cb_missions")||"[]")},
+  setMissions(m){localStorage.setItem("cb_missions",JSON.stringify(m))},
+  questions(){let q=JSON.parse(localStorage.getItem("cb_questions")||"null");
+    if(!q){q=DEFAULT_QUESTIONS.slice();localStorage.setItem("cb_questions",JSON.stringify(q));}return q;},
+  setQuestions(q){localStorage.setItem("cb_questions",JSON.stringify(q))},
+  log(){return JSON.parse(localStorage.getItem("cb_log")||"[]")},
+  shop(){let s=JSON.parse(localStorage.getItem("cb_shop")||"null");
+    if(!s){s=DEFAULT_SHOP.slice();localStorage.setItem("cb_shop",JSON.stringify(s));}return s;},
+  setShop(s){localStorage.setItem("cb_shop",JSON.stringify(s))},
+  farmStates(){return JSON.parse(localStorage.getItem("cb_farm_states")||"{}")},
+  setFarmStates(s){localStorage.setItem("cb_farm_states",JSON.stringify(s))},
+};
+function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;return "h"+h;}
+function offlineAdmin(action,p){
+  if(!OFFLINE_PIN) return {ok:false,error:"หน้าแอดมินออฟไลน์ยังไม่ถูกตั้งค่า PIN"};
+  if(action==="adminAuth") return {ok:p.pin===OFFLINE_PIN};
+  if(p.pin!==OFFLINE_PIN && PIN!==OFFLINE_PIN) return {ok:false,error:"PIN ไม่ถูกต้อง"};
+  const users=DB.users();
+  switch(action){
+    case "adminListUsers": return {ok:true,users:users.map(u=>({username:u.username,fullname:u.fullname,
+      cls:u.cls,no:u.no,color:u.color,charName:u.charName,points:u.points,coins:u.coins||0,createdAt:u.createdAt}))};
+    case "adminUpdateUser":{
+      const u=users.find(x=>x.username===p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
+      ["fullname","cls","no"].forEach(k=>{if(p[k]!==undefined)u[k]=p[k]});
+      if(p.points!==undefined)u.points=Number(p.points)||0;
+      if(p.coins!==undefined)u.coins=Number(p.coins)||0;
+      if(p.resetPass){
+        if(String(p.newPassword||"").length<8 || String(p.newPassword||"").length>100)
+          return {ok:false,error:"รหัสผ่านใหม่ต้องยาว 8-100 ตัวอักษร"};
+        u.pass=hash(p.newPassword);
+      }
+      DB.setUsers(users); return {ok:true};
+    }
+    case "adminDeleteUser":{
+      DB.setUsers(users.filter(x=>x.username!==p.username));
+      const states=DB.farmStates(); delete states[p.username]; DB.setFarmStates(states);
+      return {ok:true};
+    }
+    case "adminListMissions": return {ok:true,missions:DB.missions()};
+    case "adminSaveMission":{
+      const m=DB.missions(); const i=m.findIndex(x=>x.id===p.mission.id);
+      if(i>=0)m[i]=p.mission; else m.push(p.mission); DB.setMissions(m); return {ok:true};
+    }
+    case "adminDeleteMission":{ DB.setMissions(DB.missions().filter(x=>x.id!==p.id)); return {ok:true}; }
+    case "adminListQuestions": return {ok:true,questions:DB.questions()};
+    case "adminSaveQuestion":{
+      const q=DB.questions(); const i=q.findIndex(x=>x.id===p.question.id);
+      if(i>=0)q[i]=p.question; else q.push(p.question); DB.setQuestions(q); return {ok:true};
+    }
+    case "adminBulkAddQuestions":{ const q=DB.questions(); const now=Date.now();
+      (p.items||[]).forEach((it,i)=>q.push({id:"q"+(now+i),question:String(it.question),answer:String(it.answer),coins:Number(it.coins)||25,subject:it.subject||"คณิตศาสตร์"}));
+      DB.setQuestions(q); return {ok:true,added:(p.items||[]).length}; }
+    case "adminDeleteQuestion":{ DB.setQuestions(DB.questions().filter(x=>x.id!==p.id)); return {ok:true}; }
+    case "adminLog": return {ok:true,log:DB.log()};
+    case "adminListShop": return {ok:true,shop:DB.shop()};
+    case "adminSaveShopPrice":{
+      const shop=DB.shop(); const item=shop.find(x=>x.type===p.type&&x.id===p.id);
+      const price=Number(p.price);
+      if(!item||!Number.isFinite(price)||price<0||price>100000000)
+        return {ok:false,error:"ข้อมูลราคาสินค้าไม่ถูกต้อง"};
+      item.price=Math.round(price); DB.setShop(shop); return {ok:true,item};
+    }
+  }
+  return {ok:false,error:"unknown"};
+}
+
+/* ====== login ====== */
+async function adminLogin(){
+  const pin=document.getElementById("pin").value.trim();
+  const r=await api("adminAuth",{pin});
+  if(r.ok){ PIN=pin; document.getElementById("loginScreen").classList.remove("active");
+    document.getElementById("dashScreen").classList.add("active"); refreshAll(); }
+  else document.getElementById("loginMsg").textContent=r.error||"PIN ไม่ถูกต้อง";
+}
+function adminLogout(){ PIN=""; document.getElementById("pin").value="";
+  document.getElementById("dashScreen").classList.remove("active");
+  document.getElementById("loginScreen").classList.add("active"); }
+
+/* ====== data ====== */
+let USERS=[], MISSIONS=[], LOG=[], QUESTIONS=[], SHOP=[];
+async function refreshAll(){
+  const results=await Promise.all(["adminListUsers","adminListMissions","adminLog","adminListQuestions","adminListShop"].map(x=>api(x)));
+  const failed=results.find(x=>!x.ok); if(failed){ alert(failed.error||"โหลดข้อมูลไม่สำเร็จ"); return; }
+  USERS=results[0].users||[]; MISSIONS=results[1].missions||[];
+  LOG=results[2].log||[]; QUESTIONS=results[3].questions||[]; SHOP=results[4].shop||[];
+  renderStats(); renderUsers(); renderRank(); renderMissionStats(); renderMissionEditor();
+  renderQuestionEditor(); renderShopEditor(); renderEvidence();
+}
+function renderEvidence(){
+  const q=(document.getElementById("ev_search")?.value||"").toLowerCase();
+  const uName=un=>{ const u=USERS.find(x=>x.username===un); return u?u.fullname:un; };
+  const mName=id=>{ const m=MISSIONS.find(x=>x.id===id); return m?(m.icon+" "+m.title):id; };
+  let list=LOG.filter(l=>l.photo).slice().reverse();  // ล่าสุดก่อน
+  list=list.filter(l=>!q||(uName(l.username)+" "+mName(l.missionId)).toLowerCase().includes(q));
+  const cap=list.length>120; if(cap) list=list.slice(0,120);
+  document.getElementById("evidenceGrid").innerHTML=list.map(l=>`
+    <div class="evCard">
+      <img src="${safePhotoUrl(l.photo)}" loading="lazy">
+      <div class="evInfo"><b>${esc(uName(l.username))}</b>
+        <span>${esc(mName(l.missionId))}</span>
+        <div class="evMeta">${esc(l.date||"")} · +${l.points} แต้ม</div></div>
+    </div>`).join("")
+    + (cap?"<p class='muted' style='grid-column:1/-1;text-align:center'>แสดง 120 ภาพล่าสุด — ใช้ค้นหาเพื่อดูเพิ่ม</p>":"")
+    || "<p class='muted' style='grid-column:1/-1;text-align:center;padding:20px'>ยังไม่มีภาพหลักฐาน</p>";
+}
+function showLightbox(src){ document.getElementById("lightboxImg").src=src; document.getElementById("lightbox").classList.add("on"); }
+function tab(name){
+  document.querySelectorAll(".tabbar button").forEach(b=>b.classList.toggle("on",b.dataset.tab===name));
+  document.querySelectorAll(".pane").forEach(p=>p.classList.remove("on"));
+  document.getElementById("pane-"+name).classList.add("on");
+}
+
+/* ====== stats ====== */
+function renderStats(){
+  const total=USERS.length;
+  const sum=USERS.reduce((a,u)=>a+(+u.points||0),0);
+  const avg=total?Math.round(sum/total):0;
+  const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Bangkok"}).format(new Date());
+  const todayCount=LOG.filter(l=>l.date===today).length;
+  document.getElementById("stats").innerHTML=`
+    ${stat(total,"ผู้เรียนทั้งหมด")}${stat(sum,"แต้มรวมทั้งระบบ")}
+    ${stat(avg,"แต้มเฉลี่ย/คน")}${stat(todayCount,"ภารกิจสำเร็จวันนี้")}`;
+}
+const stat=(n,l)=>`<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+
+/* ====== users table ====== */
+function renderUsers(){
+  const q=(document.getElementById("search").value||"").toLowerCase();
+  const rows=USERS.filter(u=>!q||[u.fullname,u.username,u.cls].join(" ").toLowerCase().includes(q));
+  document.getElementById("userRows").innerHTML=rows.map((u,i)=>`
+    <tr><td>${i+1}</td><td>${esc(u.fullname)}</td><td>${esc(u.cls)}</td><td>${esc(u.no)}</td>
+    <td>${esc(u.username)}</td>
+    <td><span class="dot" style="background:${validColor(u.color)}"></span>${esc(u.charName||"น้องคณิต")}</td>
+    <td style="white-space:nowrap">${levelLabel(u.points)}</td>
+    <td class="rank">${u.points||0}</td>
+    <td style="color:#ffd23e;font-weight:800">🪙 ${u.coins||0}</td>
+    <td><button class="btn sm" onclick='openEdit(${jsArg(u.username)})'>แก้ไข</button>
+      <button class="btn sm danger" onclick='delUser(${jsArg(u.username)})'>ลบ</button></td></tr>`).join("")
+    || `<tr><td colspan="10" class="muted" style="text-align:center;padding:24px">ยังไม่มีผู้เรียน</td></tr>`;
+}
+function renderRank(){
+  const sorted=[...USERS].sort((a,b)=>(b.points||0)-(a.points||0));
+  document.getElementById("rankRows").innerHTML=sorted.map((u,i)=>`
+    <tr><td class="rank">${["🥇","🥈","🥉"][i]||("#"+(i+1))}</td>
+    <td>${esc(u.fullname)}</td><td>${esc(u.cls)}</td><td class="rank">${u.points||0}</td></tr>`).join("")
+    || `<tr><td colspan="4" class="muted" style="text-align:center;padding:20px">ยังไม่มีข้อมูล</td></tr>`;
+}
+function renderMissionStats(){
+  const count={}; LOG.forEach(l=>count[l.missionId]=(count[l.missionId]||0)+1);
+  const max=Math.max(1,...Object.values(count));
+  document.getElementById("missionStats").innerHTML=MISSIONS.map(m=>{
+    const c=count[m.id]||0, w=Math.round(c/max*100);
+    return `<div style="margin-bottom:8px"><div class="row" style="justify-content:space-between">
+      <span>${esc(m.icon||"🎯")} ${esc(m.title)}</span><b>${c} ครั้ง</b></div>
+      <div style="height:10px;background:#0e1730;border-radius:6px;overflow:hidden;margin-top:3px">
+      <div style="width:${w}%;height:100%;background:linear-gradient(90deg,var(--c),var(--accent))"></div></div></div>`;
+  }).join("")||"<p class='muted'>ยังไม่มีภารกิจ</p>";
+}
+
+/* ====== missions editor ====== */
+function renderMissionEditor(){
+  document.getElementById("missionEditor").innerHTML=MISSIONS.map(m=>`
+    <div class="mrow"><span class="ic">${esc(m.icon||"🎯")}</span>
+      <span class="t">${esc(m.title)}</span><span class="pt">+${m.points}</span>
+      <button class="btn sm ghost" onclick='editMission(${jsArg(m.id)})'>แก้ไข</button>
+      <button class="btn sm danger" onclick='delMission(${jsArg(m.id)})'>ลบ</button></div>`).join("")
+    ||"<p class='muted'>ยังไม่มีภารกิจ กดเพิ่มด้านบน</p>";
+}
+async function addMission(){
+  const icon=document.getElementById("nm_icon").value.trim()||"🎯";
+  const title=document.getElementById("nm_title").value.trim();
+  const points=parseInt(document.getElementById("nm_points").value)||0;
+  if(!title) return alert("กรอกชื่อภารกิจ");
+  const mission={id:"m"+Date.now(),icon,title,points};
+  await api("adminSaveMission",{mission});
+  document.getElementById("nm_title").value=""; document.getElementById("nm_points").value="10";
+  refreshAll();
+}
+async function editMission(id){
+  const m=MISSIONS.find(x=>x.id===id); if(!m)return;
+  const title=prompt("ชื่อภารกิจ",m.title); if(title===null)return;
+  const points=parseInt(prompt("แต้ม",m.points)); if(isNaN(points))return;
+  const icon=prompt("ไอคอน (อิโมจิ)",m.icon)||m.icon;
+  await api("adminSaveMission",{mission:{...m,title,points,icon}}); refreshAll();
+}
+async function delMission(id){ if(!confirm("ลบภารกิจนี้?"))return;
+  await api("adminDeleteMission",{id}); refreshAll(); }
+
+/* ====== shop price editor ====== */
+function renderShopEditor(){
+  document.getElementById("shopRows").innerHTML=SHOP.map((item,i)=>`
+    <tr>
+      <td>${item.type==="pets"?"สัตว์เลี้ยง":"ของตกแต่ง"}</td>
+      <td style="font-weight:800">${esc(item.emoji)} ${esc(item.name)}</td>
+      <td><code>${esc(item.id)}</code></td>
+      <td><input id="shopPrice${i}" type="number" min="0" max="100000000" step="1"
+        value="${Math.max(0,Math.round(Number(item.price)||0))}" style="max-width:170px"></td>
+      <td><button class="btn sm" onclick="saveShopPrice(${i})">💾 บันทึกราคา</button></td>
+    </tr>`).join("")
+    || `<tr><td colspan="5" class="muted" style="text-align:center;padding:20px">ยังไม่มีสินค้า กรุณารัน setup() อีกครั้ง</td></tr>`;
+}
+async function saveShopPrice(index){
+  const item=SHOP[index]; if(!item)return;
+  const price=Number(document.getElementById("shopPrice"+index).value);
+  if(!Number.isFinite(price)||price<0||price>100000000||!Number.isInteger(price)){
+    return setMsg("shopMsg","ราคาต้องเป็นจำนวนเต็ม 0–100,000,000 เหรียญ","err");
+  }
+  setMsg("shopMsg","กำลังบันทึกราคา...","");
+  const r=await api("adminSaveShopPrice",{type:item.type,id:item.id,price});
+  if(!r.ok) return setMsg("shopMsg",r.error||"บันทึกราคาไม่สำเร็จ","err");
+  SHOP[index]={...item,...r.item};
+  setMsg("shopMsg","บันทึกราคา "+item.emoji+" "+item.name+" แล้ว ✔","ok");
+  renderShopEditor();
+}
+
+/* ====== questions editor ====== */
+function allSubjects(){ return [...new Set(SUBJECTS.concat(QUESTIONS.map(q=>q.subject).filter(Boolean)))]; }
+function fillSubjectControls(){
+  const subs=allSubjects();
+  const dl=document.getElementById("subjectList");
+  if(dl) dl.innerHTML=subs.map(s=>`<option>${esc(s)}</option>`).join("");
+  const filt=document.getElementById("q_subjectFilter");
+  if(filt){ const cur=filt.value; filt.innerHTML=`<option value="">ทุกวิชา</option>`+subs.map(s=>`<option>${esc(s)}</option>`).join("");
+    filt.value=cur; }
+}
+function renderQuestionEditor(){
+  fillSubjectControls();
+  const cnt=document.getElementById("q_count"); if(cnt) cnt.textContent=QUESTIONS.length;
+  const q=(document.getElementById("q_search")?.value||"").toLowerCase();
+  const subj=document.getElementById("q_subjectFilter")?.value||"";
+  let list=QUESTIONS.filter(x=>(!subj||(x.subject||"คณิตศาสตร์")===subj) && (!q||(x.question+" "+x.answer).toLowerCase().includes(q)));
+  const capped=list.length>200; if(capped) list=list.slice(0,200);
+  document.getElementById("questionEditor").innerHTML=list.map(q=>`
+    <div class="mrow"><span class="ic">❓</span>
+      <span class="t">${esc(q.question)} <span class="muted">= ${esc(q.answer)}</span>
+        <span class="subjTag">${esc(q.subject||"คณิตศาสตร์")}</span></span>
+      <span class="pt">🪙 ${q.coins}</span>
+      <button class="btn sm ghost" onclick='editQuestion(${jsArg(q.id)})'>แก้ไข</button>
+      <button class="btn sm danger" onclick='delQuestion(${jsArg(q.id)})'>ลบ</button></div>`).join("")
+    + (capped?"<p class='muted' style='text-align:center;margin-top:8px'>แสดง 200 ข้อแรก — ใช้ตัวกรอง/ค้นหาเพื่อดูข้ออื่น</p>":"")
+    || "<p class='muted'>ไม่พบโจทย์ในเงื่อนไขนี้</p>";
+}
+async function doImport(items,statusId){
+  const el=document.getElementById(statusId);
+  if(!items.length){ el.textContent="ไม่พบข้อมูลที่ถูกต้อง"; return; }
+  el.textContent="กำลังนำเข้า "+items.length+" ข้อ...";
+  const r=await api("adminBulkAddQuestions",{items});
+  el.textContent="นำเข้าแล้ว "+(r.added||items.length)+" ข้อ ✔";
+  refreshAll();
+}
+function rowsToItems(rows){
+  const items=[];
+  rows.forEach((r,idx)=>{ if(!r||!r.length) return;
+    const q=String(r[0]==null?"":r[0]).trim();
+    const a=String(r[1]==null?"":r[1]).trim();
+    const c=parseInt(r[2])||25;
+    const s=String(r[3]==null?"":r[3]).trim()||"คณิตศาสตร์";
+    if(idx===0 && /^(question|โจทย์|คำถาม)$/i.test(q)) return;   // ข้ามแถวหัวตาราง
+    if(!q || a==="") return;
+    items.push({question:q,answer:a,coins:c,subject:s}); });
+  return items;
+}
+async function bulkAddQuestions(){
+  const raw=document.getElementById("q_bulk").value.trim();
+  if(!raw){ document.getElementById("bulkMsg").textContent=""; return; }
+  const rows=raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>l.split(/\s*[|,]\s*/));
+  await doImport(rowsToItems(rows),"bulkMsg");
+  document.getElementById("q_bulk").value="";
+}
+/* ---- นำเข้าไฟล์ CSV ---- */
+function parseCSV(text){
+  text=text.replace(/^﻿/,"").replace(/\r\n?/g,"\n");
+  const rows=[]; let row=[],cell="",inQ=false;
+  for(let i=0;i<text.length;i++){ const c=text[i];
+    if(inQ){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else inQ=false; } else cell+=c; }
+    else if(c==='"') inQ=true;
+    else if(c===",") { row.push(cell); cell=""; }
+    else if(c==="\n"){ row.push(cell); rows.push(row); row=[]; cell=""; }
+    else cell+=c; }
+  if(cell!==""||row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+function importCsv(e){ const f=e.target.files[0]; if(!f) return;
+  document.getElementById("csvMsg").textContent="กำลังอ่านไฟล์...";
+  const rd=new FileReader();
+  rd.onload=()=>{ doImport(rowsToItems(parseCSV(rd.result)),"csvMsg"); e.target.value=""; };
+  rd.onerror=()=>{ document.getElementById("csvMsg").textContent="อ่านไฟล์ไม่สำเร็จ"; };
+  rd.readAsText(f,"utf-8"); }
+function downloadCsvTemplate(){
+  download("ตัวอย่างโจทย์.csv",
+    csv([["โจทย์","คำตอบ","เหรียญ","วิชา"],
+      ["7 + 8 = ?","15","25","คณิตศาสตร์"],
+      ["น้ำเดือดที่กี่องศาเซลเซียส","100","25","วิทยาศาสตร์"],
+      ["cat แปลว่าอะไร","แมว","25","ภาษาอังกฤษ"]]));
+}
+async function addQuestion(){
+  const question=document.getElementById("nq_question").value.trim();
+  const answer=document.getElementById("nq_answer").value.trim();
+  const subject=document.getElementById("nq_subject").value.trim()||"คณิตศาสตร์";
+  const coins=parseInt(document.getElementById("nq_coins").value)||25;
+  if(!question||!answer) return alert("กรอกโจทย์และคำตอบ");
+  await api("adminSaveQuestion",{question:{id:"q"+Date.now(),question,answer,coins,subject}});
+  document.getElementById("nq_question").value=""; document.getElementById("nq_answer").value="";
+  document.getElementById("nq_coins").value="25"; refreshAll();
+}
+async function editQuestion(id){
+  const q=QUESTIONS.find(x=>x.id===id); if(!q)return;
+  const question=prompt("โจทย์",q.question); if(question===null)return;
+  const answer=prompt("คำตอบ",q.answer); if(answer===null)return;
+  const subject=prompt("วิชา",q.subject||"คณิตศาสตร์"); if(subject===null)return;
+  const coins=parseInt(prompt("เหรียญที่ได้",q.coins)); if(isNaN(coins))return;
+  await api("adminSaveQuestion",{question:{...q,question,answer,coins,subject:subject.trim()||"คณิตศาสตร์"}}); refreshAll();
+}
+async function delQuestion(id){ if(!confirm("ลบโจทย์นี้?"))return;
+  await api("adminDeleteQuestion",{id}); refreshAll(); }
+
+/* ====== edit user ====== */
+function openEdit(username){
+  const u=USERS.find(x=>x.username===username); if(!u)return;
+  document.getElementById("ed_user").value=u.username;
+  document.getElementById("ed_name").value=u.fullname||"";
+  document.getElementById("ed_cls").value=u.cls||"";
+  document.getElementById("ed_no").value=u.no||"";
+  document.getElementById("ed_points").value=u.points||0;
+  document.getElementById("ed_coins").value=u.coins||0;
+  document.getElementById("edMsg").textContent="";
+  document.getElementById("editModal").classList.add("on");
+}
+function closeModal(){ document.getElementById("editModal").classList.remove("on"); }
+async function saveUser(){
+  const p={username:document.getElementById("ed_user").value,
+    fullname:document.getElementById("ed_name").value.trim(),
+    cls:document.getElementById("ed_cls").value.trim(),
+    no:document.getElementById("ed_no").value.trim(),
+    points:document.getElementById("ed_points").value,
+    coins:document.getElementById("ed_coins").value};
+  const r=await api("adminUpdateUser",p);
+  if(r.ok){ closeModal(); refreshAll(); } else document.getElementById("edMsg").textContent=r.error||"บันทึกไม่สำเร็จ";
+}
+async function resetPass(){
+  const newPassword=prompt("ตั้งรหัสผ่านใหม่ 8-100 ตัวอักษร");
+  if(newPassword===null)return;
+  if(newPassword.length<8 || newPassword.length>100){
+    document.getElementById("edMsg").textContent="รหัสผ่านใหม่ต้องยาว 8-100 ตัวอักษร";
+    document.getElementById("edMsg").className="msg err";
+    return;
+  }
+  const confirmPassword=prompt("กรอกรหัสผ่านใหม่ซ้ำอีกครั้ง");
+  if(confirmPassword!==newPassword){
+    document.getElementById("edMsg").textContent="รหัสผ่านทั้งสองครั้งไม่ตรงกัน";
+    document.getElementById("edMsg").className="msg err";
+    return;
+  }
+  const r=await api("adminUpdateUser",{username:document.getElementById("ed_user").value,
+    resetPass:true,newPassword});
+  document.getElementById("edMsg").textContent=r.ok
+    ?"ตั้งรหัสผ่านใหม่แล้ว กรุณาส่งให้ผู้เรียนเป็นการส่วนตัว ✔"
+    :(r.error||"ตั้งรหัสผ่านไม่สำเร็จ");
+  document.getElementById("edMsg").className=r.ok?"msg":"msg err";
+}
+async function delUser(username){
+  if(!confirm("ลบผู้เรียน "+username+" ? (ลบถาวร)"))return;
+  await api("adminDeleteUser",{username}); refreshAll();
+}
+
+/* ====== export CSV ====== */
+function csv(rows){ return "﻿"+rows.map(r=>r.map(c=>{
+  const s=String(c??""); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+}).join(",")).join("\r\n"); }
+function download(name,text){ const b=new Blob([text],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); }
+function exportUsers(){
+  const rows=[["ชื่อ-สกุล","ชั้น","เลขที่","username","ชื่อตัวละคร","สี","แต้ม","สมัครเมื่อ"]];
+  USERS.forEach(u=>rows.push([u.fullname,u.cls,u.no,u.username,u.charName,u.color,u.points,u.createdAt]));
+  download("รายชื่อผู้เรียน.csv",csv(rows));
+}
+function exportLog(){
+  const rows=[["username","ภารกิจ","แต้ม","วันที่","เวลา"]];
+  const mName=id=>(MISSIONS.find(m=>m.id===id)||{}).title||id;
+  LOG.forEach(l=>rows.push([l.username,mName(l.missionId),l.points,l.date,l.at]));
+  download("ประวัติการทำภารกิจ.csv",csv(rows));
+}
+
+/* ====== helpers ====== */
+function setMsg(id,text,type){
+  const el=document.getElementById(id); if(!el)return;
+  el.textContent=text; el.className="msg "+(type||"");
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function jsArg(s){ return JSON.stringify(String(s??"")).replace(/'/g,"\\u0027").replace(/</g,"\\u003c"); }
+function validColor(s){ return /^#[0-9a-f]{6}$/i.test(String(s||"")) ? s : "#4a90ff"; }
+function safePhotoUrl(s){
+  const u=String(s||"");
+  return /^https:\/\/drive\.google\.com\/thumbnail\?id=[A-Za-z0-9_-]+(?:&sz=w\d+)?$/.test(u) ? esc(u) : "";
+}
+document.getElementById("modeTag").textContent=CONFIG.GAS_URL?"โหมด: เชื่อมต่อ Google Sheets":"GitHub Pages · ข้อมูลในเครื่อง";
+</script>
+</body>
+</html>
