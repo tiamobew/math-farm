@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ฟาร์มคณิต — ระบบสะสมแต้มการเรียน</title>
+<style>
+  :root{
+    --c:#4a90ff; --cd:#2f6fdc;              /* character color (changeable) */
+    --bg1:#0f1830; --bg2:#1a2850; --card:#182545;
+    --line:#2a3d6b; --ink:#eaf1ff; --muted:#9fb2d8; --accent:#5ef2c6;
+    --good:#37c26b; --warn:#ffcf4d; --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"TH Sarabun New","Sarabun","Segoe UI",Tahoma,sans-serif;
+    background:radial-gradient(1200px 600px at 70% -10%,#24356b 0%,var(--bg1) 55%);
+    color:var(--ink); min-height:100vh; font-size:19px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:18px}
+  .screen{display:none} .screen.active{display:block;animation:fade .3s}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+  h1,h2,h3{font-weight:800;line-height:1.2}
+  .accent{color:var(--accent)}
+  .muted{color:var(--muted)}
+  button{font-family:inherit;cursor:pointer;border:none;font-size:19px}
+  .btn{background:linear-gradient(var(--c),var(--cd));color:#fff;font-weight:800;
+    padding:12px 26px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.3);transition:transform .08s}
+  .btn:active{transform:translateY(2px)}
+  .btn.ghost{background:transparent;border:2px solid var(--line);color:var(--ink);box-shadow:none}
+  .btn.sm{padding:8px 16px;font-size:17px;border-radius:10px}
+  .btn:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.4)}
+  input,select{font-family:inherit;font-size:19px;width:100%;padding:11px 14px;border-radius:11px;
+    border:2px solid var(--line);background:#0e1730;color:var(--ink);outline:none}
+  input:focus,select:focus{border-color:var(--c)}
+  label{display:block;margin:10px 0 5px;color:var(--muted);font-size:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;
+    box-shadow:0 18px 40px rgba(0,0,0,.35)}
+  .center{text-align:center}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .pill{background:#0e1730;border:1px solid var(--line);border-radius:999px;padding:7px 16px;font-weight:700}
+
+  /* ---------- AUTH ---------- */
+  #authScreen .wrap{max-width:460px;padding-top:26px}
+  .brand{text-align:center;margin-bottom:6px}
+  .brand h1{font-size:30px} .brand h1 b{color:var(--accent)}
+  .tabs{display:flex;background:#0e1730;border-radius:12px;padding:5px;margin:16px 0;border:1px solid var(--line)}
+  .tabs button{flex:1;background:transparent;color:var(--muted);padding:10px;border-radius:9px;font-weight:800}
+  .tabs button.on{background:linear-gradient(var(--c),var(--cd));color:#fff}
+  .form{display:none} .form.on{display:block}
+  .msg{min-height:22px;font-size:16px;margin-top:8px}
+  .msg.err{color:var(--bad)} .msg.ok{color:var(--good)}
+
+  /* ---------- APP TOPBAR ---------- */
+  .top{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);
+    border-radius:16px;padding:12px 16px;margin-bottom:16px}
+  .top .who{flex:1}
+  .top .who .nm{font-weight:800;font-size:20px}
+  .avatar{width:60px;height:60px;border-radius:14px;background:#0e1730;display:grid;place-items:center;flex:none}
+  .avatar svg{width:52px;height:52px}
+  .points{font-weight:900;font-size:22px;color:var(--warn)}
+
+  /* ---------- MISSIONS ---------- */
+  .mgrid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
+  @media(min-width:640px){.mgrid{grid-template-columns:1fr 1fr}}
+  .mission{background:#0e1730;border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;
+    gap:12px;align-items:center}
+  .mission .ic{font-size:34px;flex:none}
+  .mission .body{flex:1}
+  .mission .t{font-weight:800}
+  .mission .p{color:var(--warn);font-weight:800;font-size:16px}
+  .mission.done{opacity:.55}
+  .mission .btn{padding:9px 14px;font-size:16px}
+
+  /* ---------- CUSTOMIZE ---------- */
+  .heroBot{display:grid;place-items:center;padding:10px}
+  .heroBot svg{width:200px;height:220px;filter:drop-shadow(0 12px 20px rgba(0,0,0,.5))}
+  .swatches{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+  .sw{width:44px;height:44px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:transform .1s}
+  .sw:hover{transform:scale(1.12)}
+  .sw.on{border-color:#fff;transform:scale(1.12)}
+  .robotName{text-align:center;font-weight:900;font-size:24px;color:var(--accent);margin-top:6px}
+  .modeTag{position:fixed;bottom:10px;right:12px;font-size:13px;color:var(--muted);
+    background:rgba(0,0,0,.35);padding:4px 10px;border-radius:8px}
+
+  /* ---------- LEVEL + BADGES ---------- */
+  .lvTop{display:flex;gap:14px;align-items:center}
+  .lvIcon{font-size:44px;flex:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))}
+  .lvInfo{flex:1}
+  .lvName{font-weight:900;font-size:20px}
+  .lvBar{height:14px;background:#0e1730;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:6px 0 4px}
+  .lvFill{height:100%;width:0;border-radius:999px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+  .lvHint{font-size:15px}
+  .badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .badge{width:96px;background:#0e1730;border:1px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center}
+  .badge.locked{opacity:.45;filter:grayscale(1)}
+  .badge.got{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn) inset}
+  .badge .bIcon{font-size:30px}
+  .badge .bName{font-size:14px;font-weight:700;margin-top:3px;line-height:1.15}
+  /* how-to-play */
+  .helpList{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+  .helpItem{display:flex;gap:12px;align-items:flex-start;background:#0e1730;border:1px solid var(--line);border-radius:12px;padding:12px}
+  .helpItem .he{font-size:30px;flex:none;line-height:1}
+  .helpItem b{font-size:18px}
+
+  /* ---------- LEADERBOARD ---------- */
+  .lbList{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+  .lbRow{display:flex;align-items:center;gap:12px;background:#0e1730;border:1px solid var(--line);
+    border-radius:12px;padding:10px 14px}
+  .lbRow.me{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:#0d2033}
+  .lbRank{font-weight:900;font-size:20px;width:40px;text-align:center;flex:none}
+  .lbDot{width:16px;height:16px;border-radius:50%;flex:none}
+  .lbName{flex:1;font-weight:700}
+  .lbName small{color:var(--muted);font-weight:400;font-size:14px}
+  .lbPts{font-weight:900;color:var(--warn)}
+
+  /* ---------- FARM GAME (เกาะลอยฟ้า) ---------- */
+  .coinChip{background:#3a2c00;color:#ffd23e;border:1px solid #ffd23e;border-radius:999px;
+    padding:7px 16px;font-weight:900;font-size:20px;white-space:nowrap}
+  #farmScreen.active{display:flex;flex-direction:column;min-height:100vh}
+  .islandStage{position:relative;flex:1;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(#7ec8ff,#bfe6ff);overflow:hidden}
+  #island{width:100%;max-width:1000px;height:auto;aspect-ratio:3/2;display:block;touch-action:none}
+  .hudTop{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;
+    align-items:center;gap:10px;pointer-events:none}
+  .hudTop>*{pointer-events:auto}
+  .hudGroup{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .subjectSel{font-family:inherit;font-size:15px;font-weight:800;padding:9px 12px;border-radius:10px;
+    border:none;background:linear-gradient(#37c26b,#1f9a4f);color:#fff;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.25)}
+  .hudHint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(5,10,25,.6);
+    color:#eaf1ff;padding:7px 16px;border-radius:999px;font-size:15px;text-align:center;max-width:92%}
+  .hudHint b{color:var(--accent)}
+  /* touch joystick */
+  .joy{position:absolute;bottom:56px;left:16px;display:flex;flex-direction:column;align-items:center;gap:6px;
+    opacity:.9;user-select:none}
+  .jrow{display:flex;gap:6px;align-items:center}
+  .jb{width:52px;height:52px;border-radius:14px;border:none;background:rgba(255,255,255,.85);
+    font-size:22px;font-weight:900;color:#123;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+  .jb:active{transform:scale(.92)}
+  .jchop{background:linear-gradient(#ffd44d,#ff9d2e)}
+  @media(min-width:760px){.joy{display:none}}       /* ซ่อนจอยบนจอใหญ่ ใช้คีย์บอร์ดแทน */
+  /* shop overlay */
+  .shopOverlay{position:fixed;inset:0;background:rgba(5,10,25,.75);display:none;place-items:center;z-index:60;padding:16px}
+  .shopOverlay.on{display:grid}
+  .shopBox{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;max-width:640px;width:100%}
+  .ftabs{display:flex;gap:8px;flex-wrap:wrap}
+  .ftabs button{background:#0e1730;border:1px solid var(--line);color:var(--muted);padding:9px 18px;border-radius:10px;font-weight:800}
+  .ftabs button.on{background:linear-gradient(#37c26b,#1f9a4f);color:#fff;border-color:transparent}
+  .shopGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  @media(min-width:560px){.shopGrid{grid-template-columns:repeat(4,1fr)}}
+  .shopCard{background:#0e1730;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+  .shopCard .pe{font-size:52px}
+  .shopCard .pn{font-weight:800;margin:4px 0}
+  .shopCard .pp{color:#ffd23e;font-weight:900}
+  .shopCard button{margin-top:8px;width:100%}
+  .shopCard button:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.5)}
+  .qText{font-size:34px;font-weight:900;text-align:center;margin:14px 0;color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- =================== AUTH =================== -->
+<section id="authScreen" class="screen active">
+  <div class="wrap">
+    <div class="brand">
+      <div class="heroBot" style="--c:#4a90ff;--cd:#2f6fdc"><div id="authBot"></div></div>
+      <h1>ฟาร์ม<b>คณิต</b></h1>
+      <p class="muted">ระบบสะสมแต้มการเรียน — สมัคร เข้าเรียน ทำภารกิจ สะสมแต้ม!</p>
+    </div>
+    <div class="card">
+      <div class="tabs">
+        <button id="tabLogin" class="on" onclick="switchTab('login')">เข้าสู่ระบบ</button>
+        <button id="tabReg" onclick="switchTab('reg')">สมัครสมาชิก</button>
+      </div>
+
+      <div id="loginForm" class="form on">
+        <label>Username</label><input id="li_user" autocomplete="username">
+        <label>รหัสผ่าน</label><input id="li_pass" type="password" autocomplete="current-password">
+        <div id="loginMsg" class="msg"></div>
+        <button class="btn" style="width:100%;margin-top:6px" onclick="doLogin()">เข้าสู่ระบบ ▶</button>
+      </div>
+
+      <div id="regForm" class="form">
+        <label>ชื่อ-สกุล</label><input id="rg_name" placeholder="เช่น เด็กหญิงใจดี เรียนเก่ง">
+        <div class="row">
+          <div style="flex:2"><label>ชั้น/ห้อง</label><input id="rg_cls" placeholder="ป.6/2"></div>
+          <div style="flex:1"><label>เลขที่</label><input id="rg_no" inputmode="numeric" placeholder="15"></div>
+        </div>
+        <label>ตั้ง Username</label><input id="rg_user" autocomplete="username" placeholder="ภาษาอังกฤษ/ตัวเลข">
+        <label>ตั้งรหัสผ่าน</label><input id="rg_pass" type="password" autocomplete="new-password">
+        <label>รหัสสมัครจากครู</label><input id="rg_code" type="password" autocomplete="off">
+        <div id="regMsg" class="msg"></div>
+        <button class="btn" style="width:100%;margin-top:6px" onclick="doRegister()">สมัครสมาชิก ✔</button>
+      </div>
+    </div>
+    <p class="center muted" style="margin-top:14px;font-size:15px">
+      คุณครู/ผู้ดูแล → <a href="./admin.html" style="color:var(--accent)">เข้าหน้าจัดการระบบ</a>
+    </p>
+  </div>
+</section>
+
+<!-- =================== APP (dashboard) =================== -->
+<section id="appScreen" class="screen">
+  <div class="wrap">
+    <div class="top">
+      <div class="avatar" id="topAvatar"></div>
+      <div class="who">
+        <div class="nm" id="topName">ชื่อหุ่น</div>
+        <div class="muted" id="topOwner">ผู้เรียน</div>
+      </div>
+      <div class="center">
+        <div class="points">⭐ <span id="topPoints">0</span></div>
+        <div class="muted" style="font-size:13px">แต้มสะสม</div>
+      </div>
+      <button class="btn ghost sm" onclick="showScreen('farmScreen')">🌳 เลี้ยงสัตว์</button>
+      <button class="btn ghost sm" onclick="showScreen('leaderboardScreen')">🏆 อันดับ</button>
+      <button class="btn ghost sm" onclick="showScreen('customizeScreen')">🎨 ปรับแต่ง</button>
+      <button class="btn ghost sm" id="muteBtn" onclick="toggleSound()" title="เปิด/ปิดเสียง">🔊</button>
+      <button class="btn ghost sm" onclick="logout()">ออก</button>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="lvTop">
+        <div class="lvIcon" id="lvIcon">🐣</div>
+        <div class="lvInfo">
+          <div class="lvName" id="lvName">ระดับ 1</div>
+          <div class="lvBar"><div class="lvFill" id="lvFill"></div></div>
+          <div class="lvHint muted" id="lvHint"></div>
+        </div>
+      </div>
+      <h3 style="margin-top:16px">🎖️ เหรียญรางวัลของฉัน</h3>
+      <div class="badges" id="badges"></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2>🎯 กระดานภารกิจการเรียน</h2>
+        <button class="btn ghost sm" onclick="openHelp()">❓ วิธีเล่น</button>
+      </div>
+      <p class="muted">ทำภารกิจให้สำเร็จเพื่อรับแต้ม — แต่ละภารกิจทำได้ <b>วันละ 1 ครั้ง</b></p>
+      <div id="missionList" class="mgrid"></div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== CUSTOMIZE =================== -->
+<section id="customizeScreen" class="screen">
+  <div class="wrap" style="max-width:520px">
+    <div class="card center">
+      <h2>ปรับแต่งหุ่นยนต์ของฉัน</h2>
+      <div class="heroBot" id="custBotWrap"><div id="custBot"></div></div>
+      <div class="robotName" id="custName">น้องคณิต</div>
+
+      <label style="text-align:left">เลือกสี</label>
+      <div class="swatches" id="swatches"></div>
+
+      <label style="text-align:left">ตั้งชื่อหุ่นยนต์</label>
+      <input id="cust_name" maxlength="20" placeholder="ตั้งชื่อให้เพื่อนหุ่นของหนู">
+
+      <div class="row" style="justify-content:center;margin-top:18px">
+        <button class="btn ghost" onclick="leaveCustomize()">◀ กลับ</button>
+        <button class="btn" onclick="saveCharacter()">💾 บันทึก</button>
+      </div>
+      <div id="custMsg" class="msg center"></div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== LEADERBOARD =================== -->
+<section id="leaderboardScreen" class="screen">
+  <div class="wrap" style="max-width:640px">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2>🏆 อันดับในห้อง</h2>
+        <button class="btn ghost sm" onclick="showScreen('appScreen')">◀ กลับ</button>
+      </div>
+      <label>เลือกห้อง</label>
+      <select id="lbClass" onchange="renderLeaderboard()"></select>
+      <div id="lbList" class="lbList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== FARM GAME (เกาะลอยฟ้า) =================== -->
+<section id="farmScreen" class="screen">
+  <div class="islandStage">
+    <canvas id="island" width="900" height="600"></canvas>
+    <div class="hudTop">
+      <div class="hudGroup">
+        <button class="btn ghost sm" onclick="exitFarm()">◀ กลับ</button>
+        <select id="subjectSel" class="subjectSel" onchange="setSubject(this.value)" title="เลือกวิชาที่จะฝึก"></select>
+      </div>
+      <div class="hudGroup">
+        <span class="coinChip">🪙 <span id="coinCount">0</span></span>
+        <button class="btn ghost sm" id="saveFarmBtn" onclick="saveFarmState()">💾 บันทึกฟาร์ม</button>
+        <button class="btn ghost sm" id="muteBtn2" onclick="toggleSound()" title="เปิด/ปิดเสียง">🔊</button>
+        <button class="btn sm" onclick="openShop()">🛒 ร้านสัตว์</button>
+      </div>
+    </div>
+    <div class="hudHint">🕹️ ใช้ปุ่มลูกศร/WASD เดิน • หรือแตะพื้นเพื่อเดินไป • เดินชนต้นไม้แล้วกด <b>Space</b> เพื่อตัด</div>
+    <div class="joy" id="joy">
+      <button class="jb" data-k="ArrowUp">▲</button>
+      <div class="jrow">
+        <button class="jb" data-k="ArrowLeft">◀</button>
+        <button class="jb jchop" data-act="chop">🪓</button>
+        <button class="jb" data-k="ArrowRight">▶</button>
+      </div>
+      <button class="jb" data-k="ArrowDown">▼</button>
+    </div>
+  </div>
+
+  <!-- shop overlay -->
+  <div class="shopOverlay" id="shopModal">
+    <div class="shopBox">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2>🛒 ร้านสัตว์เลี้ยง</h2>
+        <span class="coinChip">🪙 <span id="coinCount2">0</span></span>
+      </div>
+      <p class="muted" style="margin:6px 0">ตัดไม้ตอบโจทย์เก็บเหรียญมาซื้อ สัตว์จะเดินเล่น ของตกแต่งจะไปตั้งในทุ่ง!</p>
+      <div class="ftabs" style="margin:6px 0 2px">
+        <button id="stab-pets" class="on" onclick="shopTab('pets')">🐾 สัตว์เลี้ยง</button>
+        <button id="stab-decor" onclick="shopTab('decor')">🏠 ของตกแต่ง</button>
+      </div>
+      <div class="shopGrid" id="shopGrid"></div>
+      <button class="btn ghost" style="width:100%;margin-top:14px" onclick="closeShop()">ปิด</button>
+    </div>
+  </div>
+</section>
+
+<!-- how-to-play modal (วิธีเล่น) -->
+<div id="helpModal" style="position:fixed;inset:0;background:rgba(5,10,25,.82);display:none;place-items:center;z-index:75;padding:16px">
+  <div class="card" style="max-width:470px;width:100%;max-height:92vh;overflow:auto">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2>🎮 วิธีเล่น ฟาร์มคณิต</h2>
+      <button class="btn ghost sm" onclick="closeHelp()">✕</button>
+    </div>
+    <div class="helpList">
+      <div class="helpItem"><span class="he">🎯</span><div><b>ทำภารกิจการเรียน</b><br><span class="muted">ทำกิจกรรม แนบภาพหลักฐาน แล้วกดรับแต้ม (วันละ 1 ครั้งต่อภารกิจ)</span></div></div>
+      <div class="helpItem"><span class="he">⭐</span><div><b>สะสมแต้ม เลื่อนระดับ</b><br><span class="muted">แต้มมากขึ้น = เลื่อนระดับ และปลดล็อกเหรียญรางวัล</span></div></div>
+      <div class="helpItem"><span class="he">🌳</span><div><b>ไปเลี้ยงสัตว์ (ตัดต้นไม้)</b><br><span class="muted">เดินไปหาต้นไม้ กด Space ตอบโจทย์ให้ถูก รับเหรียญ 🪙</span></div></div>
+      <div class="helpItem"><span class="he">🛒</span><div><b>ซื้อสัตว์ &amp; ของตกแต่ง</b><br><span class="muted">เอาเหรียญไปซื้อ ไก่ เป็ด หมู ปลา บ้าน รั้ว น้ำพุ ฯลฯ มาตั้งในทุ่ง</span></div></div>
+      <div class="helpItem"><span class="he">🏆</span><div><b>ดูอันดับในห้อง</b><br><span class="muted">แข่งสะสมแต้มกับเพื่อน ๆ ในห้องเดียวกัน</span></div></div>
+      <div class="helpItem"><span class="he">🎨</span><div><b>ปรับแต่งหุ่นยนต์</b><br><span class="muted">เปลี่ยนสีและตั้งชื่อเจ้าหุ่นของหนูเองได้</span></div></div>
+    </div>
+    <button class="btn" style="width:100%;margin-top:14px" onclick="closeHelp()">เริ่มเล่นเลย! 🚀</button>
+  </div>
+</div>
+
+<!-- photo-evidence modal (แนบภาพก่อนรับแต้ม) -->
+<div id="photoModal" style="position:fixed;inset:0;background:rgba(5,10,25,.78);display:none;place-items:center;z-index:70;padding:16px">
+  <div class="card" style="max-width:440px;width:100%;text-align:center">
+    <h2>📷 แนบภาพหลักฐานกิจกรรม</h2>
+    <p class="muted" id="photoMission" style="margin-top:4px"></p>
+    <p class="muted" style="font-size:15px;margin:6px 0">ถ่าย/เลือกภาพตอนทำกิจกรรมนี้ แล้วส่งเพื่อรับแต้ม</p>
+    <div style="margin:12px 0;background:#0e1730;border:2px dashed var(--line);border-radius:14px;min-height:150px;display:grid;place-items:center;overflow:hidden">
+      <div id="photoPlaceholder" class="muted" style="font-size:44px">📷</div>
+      <img id="photoPreview" style="display:none;max-width:100%;max-height:260px;border-radius:12px">
+    </div>
+    <label class="btn ghost" style="display:inline-block;cursor:pointer">
+      📷 เลือก/ถ่ายภาพ
+      <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="onPhotoPick(event)">
+    </label>
+    <div id="photoMsg" class="msg" style="min-height:22px;font-weight:800"></div>
+    <div class="row" style="justify-content:center;margin-top:4px">
+      <button class="btn ghost" onclick="closePhoto()">ยกเลิก</button>
+      <button class="btn" id="photoSubmit" disabled onclick="submitMissionPhoto()">ส่งและรับแต้ม ✔</button>
+    </div>
+  </div>
+</div>
+
+<!-- question modal -->
+<div class="modal" id="qModal" style="position:fixed;inset:0;background:rgba(5,10,25,.75);display:none;place-items:center;z-index:60;padding:16px">
+  <div class="card" style="max-width:420px;width:100%;text-align:center">
+    <div style="font-size:44px">🌳🪓</div>
+    <div class="qText" id="qText"></div>
+    <input id="qAnswer" inputmode="numeric" placeholder="พิมพ์คำตอบ" style="text-align:center;font-size:24px"
+      onkeydown="if(event.key==='Enter')submitAnswer()">
+    <div id="qMsg" class="msg" style="min-height:24px;font-weight:800"></div>
+    <div class="row" style="justify-content:center;margin-top:6px">
+      <button class="btn ghost" onclick="closeQ()">ยกเลิก</button>
+      <button class="btn" onclick="submitAnswer()">✔ ตอบ</button>
+    </div>
+  </div>
+</div>
+
+<div class="modeTag" id="modeTag">โหมด: ออฟไลน์ (ทดลอง)</div>
+
+<script>
+/* ======================================================================
+   CONFIG — วางลิงก์ Google Apps Script ที่ deploy แล้วตรงนี้เพื่อใช้งานจริง
+   ถ้าเว้นว่าง = โหมดออฟไลน์ (เก็บข้อมูลในเครื่อง สำหรับทดลอง/สาธิต)
+   ====================================================================== */
+const CONFIG = { GAS_URL: "" }; // GitHub Pages: เก็บข้อมูลใน localStorage ของเบราว์เซอร์
+const GITHUB_REGISTRATION_CODE = "FARM-STUDENT-2026";
+
+/* ===== ระบบเสียง (Web Audio สังเคราะห์เอง ไม่ต้องมีไฟล์เสียง) ===== */
+const Sound=(function(){
+  let ctx=null,master=null,muted=localStorage.getItem("cb_mute")==="1",bgmOn=false,bgmTimer=null;
+  const VOL=0.5;
+  function ensure(){ if(ctx)return; try{ ctx=new (window.AudioContext||window.webkitAudioContext)();
+    master=ctx.createGain(); master.gain.value=muted?0:VOL; master.connect(ctx.destination); }catch(e){} }
+  function resume(){ ensure(); if(ctx&&ctx.state==="suspended") ctx.resume(); }
+  function tone(f,dur,type,vol,when,glide){ if(!ctx||muted)return; const t=when||ctx.currentTime;
+    const o=ctx.createOscillator(),g=ctx.createGain(); o.type=type||"sine"; o.frequency.setValueAtTime(f,t);
+    if(glide) o.frequency.exponentialRampToValueAtTime(glide,t+dur);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol||0.3,t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+0.02); }
+  function noise(dur,vol,when){ if(!ctx||muted)return; const t=when||ctx.currentTime;
+    const n=ctx.createBufferSource(),buf=ctx.createBuffer(1,Math.max(1,ctx.sampleRate*dur),ctx.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1; n.buffer=buf;
+    const g=ctx.createGain(); g.gain.setValueAtTime(vol||0.3,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    const f=ctx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=1400; n.connect(f); f.connect(g); g.connect(master);
+    n.start(t); n.stop(t+dur); }
+  const now=()=>ctx?ctx.currentTime:0;
+  function click(){ resume(); tone(680,0.07,"square",0.25); }
+  function correct(){ resume(); const t=now(); tone(660,0.12,"sine",0.3,t); tone(880,0.12,"sine",0.3,t+0.1); tone(1180,0.2,"sine",0.3,t+0.2); }
+  function wrong(){ resume(); const t=now(); tone(320,0.16,"sawtooth",0.25,t,240); tone(200,0.2,"sawtooth",0.22,t+0.14); }
+  function chop(){ resume(); const t=now(); noise(0.13,0.4,t); tone(150,0.18,"sine",0.32,t,60); }
+  function buy(){ resume(); const t=now(); tone(880,0.1,"triangle",0.3,t); tone(1320,0.16,"triangle",0.3,t+0.09); }
+  function levelup(){ resume(); const t=now(); [523,659,784,1047,1319].forEach((f,i)=>tone(f,0.2,"triangle",0.32,t+i*0.11)); }
+  function animal(type){ resume(); if(!ctx||muted)return; const t=now();
+    if(type==="chicken"){ tone(950,0.06,"square",0.22,t); tone(1250,0.05,"square",0.2,t+0.09); tone(780,0.09,"square",0.18,t+0.17); }
+    else if(type==="duck"){ tone(330,0.14,"sawtooth",0.26,t,250); tone(300,0.12,"sawtooth",0.22,t+0.16,230); }
+    else if(type==="pig"){ tone(180,0.13,"sawtooth",0.3,t,110); noise(0.09,0.12,t+0.05); tone(150,0.11,"sawtooth",0.26,t+0.15,100); }
+    else { tone(520,0.05,"sine",0.14,t); tone(360,0.05,"sine",0.12,t+0.07); } }
+  const MEL=[523,587,659,784,659,587,523,587,659,659,784,880,784,659,587,523];
+  function bgmLoop(){ if(!ctx||muted||!bgmOn)return; const beat=0.34; let t=ctx.currentTime+0.06;
+    MEL.forEach((f,i)=>{ tone(f,beat*0.85,"triangle",0.11,t); if(i%2===0)tone(f/2,beat*0.85,"sine",0.07,t); t+=beat; });
+    bgmTimer=setTimeout(bgmLoop,MEL.length*beat*1000); }
+  function startBGM(){ resume(); if(bgmOn)return; bgmOn=true; bgmLoop(); }
+  function stopBGM(){ bgmOn=false; if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null;} }
+  function toggleMute(){ muted=!muted; localStorage.setItem("cb_mute",muted?"1":"0");
+    if(master)master.gain.value=muted?0:VOL; if(muted)stopBGM(); else startBGM(); return muted; }
+  return {resume,click,correct,wrong,chop,buy,levelup,animal,startBGM,stopBGM,toggleMute,isMuted:()=>muted};
+})();
+function toggleSound(){ const m=Sound.toggleMute();
+  ["muteBtn","muteBtn2"].forEach(id=>{const b=document.getElementById(id); if(b)b.textContent=m?"🔇":"🔊";}); }
+
+/* ---------- Robot mascot (SVG) ---------- */
+let robotSvgSeq=0;
+function robotSVG(c,cd,ac){
+  c=c||"var(--c)"; cd=cd||"var(--cd)"; ac=ac||"var(--accent)";
+  const uid="robot3d"+(++robotSvgSeq);
+  return `<svg viewBox="0 0 240 260" width="240" height="260" xmlns="http://www.w3.org/2000/svg">
+    <style>.cursor{animation:blink 1s steps(1) infinite}@keyframes blink{50%{opacity:0}}</style>
+    <defs>
+      <linearGradient id="${uid}Body" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#fff"/><stop offset=".13" stop-color="${c}"/>
+        <stop offset=".58" stop-color="${c}"/><stop offset="1" stop-color="${cd}"/>
+      </linearGradient>
+      <linearGradient id="${uid}Metal" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="${c}"/><stop offset="1" stop-color="${cd}"/>
+      </linearGradient>
+      <radialGradient id="${uid}Glass" cx=".35" cy=".25" r=".9">
+        <stop offset="0" stop-color="#31476c"/><stop offset=".45" stop-color="#152542"/><stop offset="1" stop-color="#07101f"/>
+      </radialGradient>
+      <filter id="${uid}Shadow" x="-30%" y="-30%" width="170%" height="180%">
+        <feDropShadow dx="0" dy="9" stdDeviation="7" flood-color="#020711" flood-opacity=".5"/>
+      </filter>
+      <filter id="${uid}Glow" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <ellipse cx="120" cy="235" rx="58" ry="13" fill="#020711" opacity=".28"/>
+    <g filter="url(#${uid}Shadow)">
+    <line x1="120" y1="30" x2="120" y2="14" stroke="${cd}" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="120" cy="11" r="7" fill="url(#${uid}Metal)"/>
+    <g fill="url(#${uid}Body)">
+      <circle cx="120" cy="82" r="50"/><circle cx="80" cy="90" r="34"/>
+      <circle cx="160" cy="90" r="34"/><circle cx="98" cy="56" r="30"/>
+      <circle cx="142" cy="56" r="30"/><ellipse cx="120" cy="98" rx="62" ry="34"/>
+    </g>
+    <ellipse cx="101" cy="48" rx="25" ry="11" fill="#fff" opacity=".2"/>
+    <rect x="82" y="60" width="76" height="50" rx="12" fill="url(#${uid}Glass)" stroke="#fff" stroke-opacity=".18" stroke-width="2"/>
+    <path d="M91 70 Q120 55 149 70" fill="none" stroke="#fff" stroke-opacity=".17" stroke-width="4" stroke-linecap="round"/>
+    <g filter="url(#${uid}Glow)"><text x="96" y="94" font-family="Consolas,monospace" font-size="30" fill="${ac}" font-weight="700">&gt;_</text>
+    <rect class="cursor" x="132" y="74" width="12" height="22" fill="${ac}"/></g>
+    <rect x="110" y="120" width="20" height="14" rx="3" fill="url(#${uid}Metal)"/>
+    <line x1="86" y1="168" x2="58" y2="150" stroke="${cd}" stroke-width="14" stroke-linecap="round"/>
+    <line x1="154" y1="168" x2="182" y2="150" stroke="${cd}" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="52" cy="148" r="13" fill="url(#${uid}Body)"/><circle cx="188" cy="148" r="13" fill="url(#${uid}Body)"/>
+    <rect x="84" y="132" width="72" height="72" rx="18" fill="url(#${uid}Body)"/>
+    <path d="M95 143 Q119 130 145 143" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="5" stroke-linecap="round"/>
+    <rect x="98" y="150" width="44" height="30" rx="7" fill="url(#${uid}Glass)" stroke="#fff" stroke-opacity=".15"/>
+    <text x="106" y="173" font-family="Consolas,monospace" font-size="18" fill="${ac}" font-weight="700">&gt;=</text>
+    <rect x="100" y="202" width="15" height="22" rx="6" fill="url(#${uid}Metal)"/>
+    <rect x="125" y="202" width="15" height="22" rx="6" fill="url(#${uid}Metal)"/>
+    <ellipse cx="107" cy="228" rx="14" ry="7" fill="url(#${uid}Metal)"/>
+    <ellipse cx="133" cy="228" rx="14" ry="7" fill="url(#${uid}Metal)"/>
+    </g>
+  </svg>`;
+}
+
+/* ---------- Color palette ---------- */
+const COLORS = [
+  ["ฟ้า","#4a90ff","#2f6fdc"],["เขียว","#37c26b","#1f9a4f"],["ม่วง","#9b6dff","#7a45e6"],
+  ["ชมพู","#ff6fae","#e6478f"],["ส้ม","#ff9d3e","#e67b17"],["แดง","#ff5d5d","#e63c3c"],
+  ["เหลือง","#ffd23e","#e0ac00"],["เทอร์ควอยซ์","#2fd0c6","#17a89f"]
+];
+function colorPair(hex){ const f=COLORS.find(c=>c[1]===hex); return f?[f[1],f[2]]:[hex,hex]; }
+
+/* ---------- default missions ---------- */
+const DEFAULT_MISSIONS = [
+  {id:"m1",icon:"📖",title:"อ่านหนังสือ 20 นาที",points:10},
+  {id:"m2",icon:"➗",title:"ทำแบบฝึกหัดคณิต 1 ชุด",points:15},
+  {id:"m3",icon:"🔤",title:"ท่องศัพท์อังกฤษ 10 คำ",points:10},
+  {id:"m4",icon:"🔬",title:"ทบทวนวิทยาศาสตร์ 1 บท",points:15},
+  {id:"m5",icon:"✍️",title:"เขียนบันทึกประจำวัน",points:5},
+  {id:"m6",icon:"🧹",title:"ช่วยงานบ้าน/รับผิดชอบหน้าที่",points:5},
+];
+
+/* ---------- Levels ---------- */
+const LEVELS=[
+  {min:0,   name:"มือใหม่หัดโค้ด",  icon:"🐣", color:"#9fb2d8"},
+  {min:50,  name:"นักเรียนขยัน",    icon:"📗", color:"#37c26b"},
+  {min:120, name:"นักสำรวจความรู้", icon:"🧭", color:"#4a90ff"},
+  {min:250, name:"นักคิดวิเคราะห์", icon:"🧠", color:"#9b6dff"},
+  {min:450, name:"ยอดนักเรียน",     icon:"🏅", color:"#ff9d3e"},
+  {min:700, name:"ปรมาจารย์โค้ดบอท", icon:"👑", color:"#ffd23e"},
+];
+function levelOf(points){ let idx=0; LEVELS.forEach((l,i)=>{ if(points>=l.min) idx=i; });
+  return {idx, lv:LEVELS[idx], next:LEVELS[idx+1]||null}; }
+
+/* ---------- Badges (เหรียญรางวัล) ---------- */
+const BADGES=[
+  {icon:"🎖️",name:"ก้าวแรก",     desc:"ทำภารกิจสำเร็จครั้งแรก", got:s=>s.totalDone>=1},
+  {icon:"🌟",name:"ขยันสุด ๆ",   desc:"ทำภารกิจครบ 10 ครั้ง",   got:s=>s.totalDone>=10},
+  {icon:"🔥",name:"สม่ำเสมอ",    desc:"ทำภารกิจตั้งแต่ 3 วันขึ้นไป", got:s=>s.activeDays>=3},
+  {icon:"💎",name:"นักสะสมแต้ม", desc:"สะสมครบ 100 แต้ม",       got:s=>s.points>=100},
+  {icon:"👑",name:"เศรษฐีแต้ม",  desc:"สะสมครบ 500 แต้ม",       got:s=>s.points>=500},
+  {icon:"🎨",name:"นักออกแบบ",   desc:"ปรับแต่งหุ่นยนต์ของตัวเอง", got:s=>s.customized},
+];
+
+/* ---------- Pets (ร้านสัตว์เลี้ยง) ---------- */
+let PETS=[
+  {id:"chicken",name:"ไก่", emoji:"🐔",price:500},
+  {id:"duck",   name:"เป็ด",emoji:"🦆",price:800},
+  {id:"fish",   name:"ปลา",emoji:"🐟",price:1000},
+  {id:"pig",    name:"หมู",emoji:"🐷",price:1500},
+];
+/* ---------- ของตกแต่ง/สิ่งปลูกสร้าง (ราคาแพง) ---------- */
+let DECOR=[
+  {id:"fence",   name:"รั้วไม้ (ต่อช่อง)", emoji:"🪵", price:3000},
+  {id:"flower",  name:"สวนดอกไม้",         emoji:"🌷", price:4000},
+  {id:"statue",  name:"รูปปั้น",            emoji:"🗿", price:6000},
+  {id:"fountain",name:"น้ำพุ",             emoji:"⛲", price:8000},
+  {id:"house",   name:"บ้าน",              emoji:"🏠", price:10000},
+];
+/* ---------- คลังโจทย์คณิตเริ่มต้น (ครูแก้ได้ในหน้าแอดมิน) ---------- */
+const DEFAULT_QUESTIONS=[
+  {id:"q1",question:"7 + 8 = ?",answer:"15",coins:25,subject:"คณิตศาสตร์"},
+  {id:"q2",question:"12 × 3 = ?",answer:"36",coins:25,subject:"คณิตศาสตร์"},
+  {id:"q3",question:"45 ÷ 9 = ?",answer:"5",coins:25,subject:"คณิตศาสตร์"},
+  {id:"q4",question:"25 − 17 = ?",answer:"8",coins:25,subject:"คณิตศาสตร์"},
+  {id:"q5",question:"6 × 7 = ?",answer:"42",coins:25,subject:"คณิตศาสตร์"},
+  {id:"q6",question:"9 + 15 = ?",answer:"24",coins:25,subject:"คณิตศาสตร์"},
+  {id:"q7",question:"100 − 64 = ?",answer:"36",coins:25,subject:"คณิตศาสตร์"},
+  {id:"q8",question:"8 × 8 = ?",answer:"64",coins:25,subject:"คณิตศาสตร์"},
+];
+function normAns(s){ return String(s==null?"":s).trim().toLowerCase().replace(/\s+/g,""); }
+function strictNum(s){ s=normAns(s);
+  if(/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$/.test(s)) return Number(s);
+  const m=s.match(/^([+-]?\d+)\/([+-]?\d+)$/); return m&&Number(m[2])!==0?Number(m[1])/Number(m[2]):null; }
+function compareAns(a,b){ if(normAns(a)===normAns(b)) return true;
+  const x=strictNum(a),y=strictNum(b); return x!==null&&y!==null&&Math.abs(x-y)<1e-10; }
+
+/* ======================================================================
+   API layer — สลับ online (GAS) / offline (localStorage) อัตโนมัติ
+   ====================================================================== */
+function callAppsScript(action,payload){
+  return new Promise(resolve=>{
+    google.script.run
+      .withSuccessHandler(data=>resolve(data||{ok:false,error:"เซิร์ฟเวอร์ไม่ส่งข้อมูลกลับมา"}))
+      .withFailureHandler(err=>resolve({ok:false,error:(err&&err.message)||"เชื่อมต่อเซิร์ฟเวอร์ไม่ได้"}))
+      .route(action,payload);
+  });
+}
+async function api(action, payload={}){
+  const token=localStorage.getItem("cb_token")||"";
+  const request={action,token,...payload};
+  if(window.google && google.script && google.script.run){
+    const data=await callAppsScript(action,request);
+    if(data.code==="AUTH_REQUIRED"){ logout(true); setMsg("loginMsg",data.error,"err"); }
+    return data;
+  }
+  if(CONFIG.GAS_URL){
+    try{
+      const res = await fetch(CONFIG.GAS_URL,{method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify(request), redirect:"follow"});
+      const data=await res.json();
+      if(data.code==="AUTH_REQUIRED"){ logout(true); setMsg("loginMsg",data.error,"err"); }
+      return data;
+    }catch(err){
+      return {ok:false,error:"เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาตรวจ URL และการ Deploy"};
+    }
+  }
+  return offlineApi(action,payload);
+}
+/* ----- offline store ----- */
+const DB = {
+  users(){ return JSON.parse(localStorage.getItem("cb_users")||"[]"); },
+  setUsers(u){ localStorage.setItem("cb_users",JSON.stringify(u)); },
+  missions(){ let m=JSON.parse(localStorage.getItem("cb_missions")||"null");
+    if(!m){ m=DEFAULT_MISSIONS.slice(); localStorage.setItem("cb_missions",JSON.stringify(m)); } return m; },
+  questions(){ let q=JSON.parse(localStorage.getItem("cb_questions")||"null");
+    if(!q){ q=DEFAULT_QUESTIONS.slice(); localStorage.setItem("cb_questions",JSON.stringify(q)); } return q; },
+  log(){ return JSON.parse(localStorage.getItem("cb_log")||"[]"); },
+  setLog(l){ localStorage.setItem("cb_log",JSON.stringify(l)); },
+  farmStates(){ return JSON.parse(localStorage.getItem("cb_farm_states")||"{}"); },
+  setFarmStates(s){ localStorage.setItem("cb_farm_states",JSON.stringify(s)); },
+  shop(){ let s=JSON.parse(localStorage.getItem("cb_shop")||"null");
+    if(!s){s=PETS.map(x=>({...x,type:"pets"})).concat(DECOR.map(x=>({...x,type:"decor"})));
+      localStorage.setItem("cb_shop",JSON.stringify(s));} return s; },
+};
+function hash(s){ let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))>>>0; return "h"+h; }
+function today(){ return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Bangkok"}).format(new Date()); }
+
+function offlineApi(action,p){
+  const users=DB.users();
+  const find=u=>users.find(x=>x.username.toLowerCase()===(u||"").toLowerCase());
+  switch(action){
+    case "register":{
+      if(!p.username||!p.password||!p.registrationCode) return {ok:false,error:"กรอกข้อมูลให้ครบ"};
+      if(p.registrationCode!==GITHUB_REGISTRATION_CODE) return {ok:false,error:"รหัสสมัครจากครูไม่ถูกต้อง"};
+      if(find(p.username)) return {ok:false,error:"มี username นี้แล้ว"};
+      const u={username:p.username,pass:hash(p.password),fullname:p.fullname||"",
+        cls:p.cls||"",no:p.no||"",color:"#4a90ff",charName:"น้องคณิต",points:0,
+        coins:0,pets:{},decor:{},createdAt:new Date().toISOString()};
+      users.push(u); DB.setUsers(users); return {ok:true};
+    }
+    case "login":{
+      const u=find(p.username);
+      if(!u||u.pass!==hash(p.password)) return {ok:false,error:"username หรือรหัสผ่านไม่ถูกต้อง"};
+      return {ok:true,user:pub(u)};
+    }
+    case "getProfile":{ const u=find(p.username); return u?{ok:true,user:pub(u)}:{ok:false,error:"ไม่พบผู้ใช้"}; }
+    case "saveCharacter":{
+      const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
+      u.color=p.color; u.charName=p.name; DB.setUsers(users); return {ok:true,user:pub(u)};
+    }
+    case "getMissions":{
+      const t=today(); const mine=DB.log().filter(l=>l.username===p.username);
+      const doneToday=mine.filter(l=>l.date===t).map(l=>l.missionId);
+      const activeDays=new Set(mine.map(l=>l.date)).size;
+      return {ok:true,missions:DB.missions(),doneToday,totalDone:mine.length,activeDays};
+    }
+    case "leaderboard":{
+      return {ok:true,users:users.map(u=>({username:u.username===p.username?u.username:"",
+        fullname:u.username===p.username?u.fullname:"",cls:u.cls,
+        color:u.color,charName:u.charName,points:u.points||0}))};
+    }
+    case "getFarm":{ const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
+      return {ok:true,coins:u.coins||0,pets:u.pets||{},decor:u.decor||{},shop:DB.shop(),
+        farmState:DB.farmStates()[u.username]||null}; }
+    case "saveFarmState":{
+      const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
+      const all=DB.farmStates(); all[u.username]=p.state||{}; DB.setFarmStates(all);
+      return {ok:true,farmState:all[u.username]}; }
+    case "buyDecor":{
+      const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
+      const it=DECOR.find(x=>x.id===p.decorId); if(!it) return {ok:false,error:"ไม่พบของตกแต่ง"};
+      if((u.coins||0)<it.price) return {ok:false,error:"เหรียญไม่พอ"};
+      u.coins-=it.price; u.decor=u.decor||{}; u.decor[it.id]=(u.decor[it.id]||0)+1; DB.setUsers(users);
+      return {ok:true,coins:u.coins,decor:u.decor}; }
+    case "getQuestions":{
+      return {ok:true,questions:DB.questions().map(q=>({id:q.id,question:q.question,coins:q.coins||25,subject:q.subject||"คณิตศาสตร์"}))}; }
+    case "answerQuestion":{
+      const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
+      const q=DB.questions().find(x=>x.id===p.questionId); if(!q) return {ok:false,error:"ไม่พบคำถาม"};
+      if(!compareAns(p.answer,q.answer)) return {ok:true,correct:false};
+      const reward=Number(q.coins)||5; u.coins=(u.coins||0)+reward; DB.setUsers(users);
+      return {ok:true,correct:true,reward,coins:u.coins}; }
+    case "buyPet":{
+      const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
+      const pet=PETS.find(x=>x.id===p.petId); if(!pet) return {ok:false,error:"ไม่พบสัตว์"};
+      if((u.coins||0)<pet.price) return {ok:false,error:"เหรียญไม่พอ"};
+      u.coins-=pet.price; u.pets=u.pets||{}; u.pets[pet.id]=(u.pets[pet.id]||0)+1; DB.setUsers(users);
+      return {ok:true,coins:u.coins,pets:u.pets}; }
+    case "completeMission":{
+      const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
+      const m=DB.missions().find(x=>x.id===p.missionId); if(!m) return {ok:false,error:"ไม่พบภารกิจ"};
+      const log=DB.log(), t=today();
+      if(log.some(l=>l.username===p.username&&l.missionId===p.missionId&&l.date===t))
+        return {ok:false,error:"ภารกิจนี้ทำวันนี้แล้ว พรุ่งนี้มาใหม่นะ"};
+      u.points=(u.points||0)+m.points; DB.setUsers(users);
+      log.push({username:p.username,missionId:p.missionId,points:m.points,
+        date:t,at:new Date().toISOString(),photo:p.photo||""}); DB.setLog(log);
+      return {ok:true,points:u.points,gained:m.points};
+    }
+  }
+  return {ok:false,error:"unknown action"};
+}
+function pub(u){ return {username:u.username,fullname:u.fullname,cls:u.cls,no:u.no,
+  color:u.color,charName:u.charName,points:u.points,coins:u.coins||0,pets:u.pets||{},decor:u.decor||{}}; }
+
+/* ======================================================================
+   UI logic
+   ====================================================================== */
+let ME=null;
+let customizeDirty=false;
+let customizeOriginal=null;
+
+function showScreen(id){
+  if(id!=="farmScreen") farmActive=false;   // หยุดลูปเกมเมื่อออกจากเกาะ
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  if(id==="customizeScreen") openCustomize();
+  if(id==="leaderboardScreen") openLeaderboard();
+  if(id==="farmScreen") openFarm();
+  window.scrollTo(0,0);
+}
+function switchTab(t){
+  document.getElementById("tabLogin").classList.toggle("on",t==="login");
+  document.getElementById("tabReg").classList.toggle("on",t==="reg");
+  document.getElementById("loginForm").classList.toggle("on",t==="login");
+  document.getElementById("regForm").classList.toggle("on",t==="reg");
+}
+function setMsg(el,text,type){ const e=document.getElementById(el); e.textContent=text; e.className="msg "+(type||""); }
+
+async function doRegister(){
+  const p={fullname:val("rg_name"),cls:val("rg_cls"),no:val("rg_no"),
+    username:val("rg_user"),password:val("rg_pass"),registrationCode:val("rg_code")};
+  if(!p.fullname||!p.username||!p.password||!p.registrationCode)
+    return setMsg("regMsg","กรุณากรอกข้อมูลและรหัสสมัครจากครูให้ครบ","err");
+  setMsg("regMsg","กำลังสมัคร...","");
+  const r=await api("register",p);
+  if(r.ok){ setMsg("regMsg","สมัครสำเร็จ! เข้าสู่ระบบได้เลย","ok");
+    switchTab("login"); document.getElementById("li_user").value=p.username; }
+  else setMsg("regMsg",r.error||"สมัครไม่สำเร็จ","err");
+}
+async function doLogin(){
+  const p={username:val("li_user"),password:val("li_pass")};
+  if(!p.username||!p.password) return setMsg("loginMsg","กรอก username และรหัสผ่าน","err");
+  setMsg("loginMsg","กำลังเข้าสู่ระบบ...","");
+  const r=await api("login",p);
+  if(r.ok){ ME=r.user; localStorage.setItem("cb_session",ME.username);
+    if(r.token) localStorage.setItem("cb_token",r.token); enterApp(); }
+  else setMsg("loginMsg",r.error||"เข้าสู่ระบบไม่สำเร็จ","err");
+}
+function logout(force=false){
+  if(!force && customizeDirty &&
+    !confirm("ยังไม่ได้บันทึกการปรับแต่ง หากออกตอนนี้ระบบจะใช้ค่าเดิม ต้องการออกโดยไม่บันทึกหรือไม่?")) return;
+  if(!force && farmDirty &&
+    !confirm("ยังไม่ได้บันทึกฟาร์ม หากออกตอนนี้ระบบจะใช้ตำแหน่งที่บันทึกเดิม ต้องการออกโดยไม่บันทึกหรือไม่?")) return;
+  customizeDirty=false; customizeOriginal=null;
+  farmDirty=false; savedFarmState=null;
+  ME=null; localStorage.removeItem("cb_session"); localStorage.removeItem("cb_token"); Sound.stopBGM();
+  document.getElementById("li_pass").value=""; showScreen("authScreen"); }
+
+function val(id){ return document.getElementById(id).value.trim(); }
+
+async function enterApp(){
+  renderTop();
+  const mi=Sound.isMuted()?"🔇":"🔊";
+  ["muteBtn","muteBtn2"].forEach(id=>{const b=document.getElementById(id); if(b)b.textContent=mi;});
+  Sound.startBGM();
+  showScreen("appScreen");
+  await loadMissions();
+  if(!localStorage.getItem("cb_seen_help")){ localStorage.setItem("cb_seen_help","1"); setTimeout(openHelp,400); }
+}
+function openHelp(){ Sound.resume(); document.getElementById("helpModal").style.display="grid"; }
+function closeHelp(){ document.getElementById("helpModal").style.display="none"; }
+function applyColor(el,hex){ const [c,cd]=colorPair(hex); el.style.setProperty("--c",c); el.style.setProperty("--cd",cd); }
+function renderTop(){
+  const av=document.getElementById("topAvatar"); av.innerHTML=robotSVG(); applyColor(av,ME.color);
+  document.getElementById("topName").textContent=ME.charName||"น้องคณิต";
+  document.getElementById("topOwner").textContent=(ME.fullname||"")+"  ·  "+(ME.cls||"");
+  document.getElementById("topPoints").textContent=ME.points||0;
+}
+async function loadMissions(){
+  const r=await api("getMissions",{username:ME.username});
+  ME._totalDone=r.totalDone||0; ME._activeDays=r.activeDays||0;
+  renderLevel(); renderBadges();
+  const list=document.getElementById("missionList"); list.innerHTML="";
+  const done=r.doneToday||[];
+  (r.missions||[]).forEach(m=>{
+    const isDone=done.includes(m.id);
+    const el=document.createElement("div");
+    el.className="mission"+(isDone?" done":"");
+    el.innerHTML=`<div class="ic">${esc(m.icon||"🎯")}</div>
+      <div class="body"><div class="t">${esc(m.title)}</div><div class="p">+${m.points} แต้ม</div></div>
+      ${isDone?'<span class="pill">✔ วันนี้แล้ว</span>'
+        :`<button class="btn sm" data-id="${esc(m.id)}">ทำสำเร็จ</button>`}`;
+    const b=el.querySelector("button"); if(b) b.onclick=()=>openMissionPhoto(m.id,m.title);
+    list.appendChild(el);
+  });
+}
+/* ----- ทำภารกิจ: ต้องแนบภาพหลักฐานก่อนรับแต้ม ----- */
+let pendingMission=null, pendingPhoto=null;
+function openMissionPhoto(id,title){
+  pendingMission=id; pendingPhoto=null;
+  document.getElementById("photoMission").textContent=title;
+  document.getElementById("photoPreview").style.display="none";
+  document.getElementById("photoPlaceholder").style.display="block";
+  document.getElementById("photoInput").value="";
+  document.getElementById("photoMsg").textContent="";
+  const s=document.getElementById("photoSubmit"); s.disabled=true; s.textContent="ส่งและรับแต้ม";
+  document.getElementById("photoModal").style.display="grid";
+}
+function closePhoto(){ document.getElementById("photoModal").style.display="none"; pendingMission=null; pendingPhoto=null; }
+function onPhotoPick(e){ const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ const img=new Image(); img.onload=()=>{
+    const max=520; let w=img.width,h=img.height;
+    if(w>h && w>max){ h=Math.round(h*max/w); w=max; } else if(h>max){ w=Math.round(w*max/h); h=max; }
+    const cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+    cv.getContext("2d").drawImage(img,0,0,w,h);
+    pendingPhoto=cv.toDataURL("image/jpeg",0.6);
+    const pv=document.getElementById("photoPreview"); pv.src=pendingPhoto; pv.style.display="block";
+    document.getElementById("photoPlaceholder").style.display="none";
+    document.getElementById("photoSubmit").disabled=false;
+  }; img.src=rd.result; };
+  rd.readAsDataURL(f); }
+async function submitMissionPhoto(){
+  if(!pendingMission||!pendingPhoto){ document.getElementById("photoMsg").className="msg err";
+    document.getElementById("photoMsg").textContent="กรุณาแนบภาพก่อน"; return; }
+  const s=document.getElementById("photoSubmit"); s.disabled=true; s.textContent="กำลังส่ง..."; Sound.click();
+  const before=levelOf(ME.points||0).idx;
+  const r=await api("completeMission",{username:ME.username,missionId:pendingMission,photo:pendingPhoto});
+  if(r.ok){ ME.points=r.points; document.getElementById("topPoints").textContent=r.points; Sound.correct();
+    closePhoto(); toast(`+${r.gained} แต้ม! 🎉`);
+    const after=levelOf(r.points).idx;
+    if(after>before){ const nl=LEVELS[after];
+      setTimeout(()=>{ Sound.levelup(); toast(`เลื่อนระดับ! ${nl.icon} ${nl.name}`,2600,"#ffd23e","#3a2c00"); },700); }
+    await loadMissions(); }
+  else { document.getElementById("photoMsg").className="msg err";
+    document.getElementById("photoMsg").textContent=r.error||"ส่งไม่สำเร็จ";
+    s.disabled=false; s.textContent="ส่งและรับแต้ม"; }
+}
+
+/* ----- level & badges ----- */
+function renderLevel(){
+  const {idx,lv,next}=levelOf(ME.points||0);
+  document.getElementById("lvIcon").textContent=lv.icon;
+  const nm=document.getElementById("lvName");
+  nm.textContent=`ระดับ ${idx+1} · ${lv.name}`; nm.style.color=lv.color;
+  const fill=document.getElementById("lvFill"); fill.style.background=lv.color;
+  if(next){ const span=next.min-lv.min, cur=(ME.points||0)-lv.min;
+    fill.style.width=Math.max(6,Math.min(100,Math.round(cur/span*100)))+"%";
+    document.getElementById("lvHint").textContent=`อีก ${next.min-(ME.points||0)} แต้ม → ${next.icon} ${next.name}`;
+  } else { fill.style.width="100%"; document.getElementById("lvHint").textContent="ถึงระดับสูงสุดแล้ว เยี่ยมมาก! 🎉"; }
+}
+function renderBadges(){
+  const s={points:ME.points||0,totalDone:ME._totalDone||0,activeDays:ME._activeDays||0,
+    customized:(ME.charName&&ME.charName!=="น้องคณิต")||(ME.color&&ME.color!=="#4a90ff")};
+  document.getElementById("badges").innerHTML=BADGES.map(b=>{const g=b.got(s);
+    return `<div class="badge ${g?"got":"locked"}" title="${b.desc}">
+      <div class="bIcon">${g?b.icon:"🔒"}</div><div class="bName">${b.name}</div></div>`;}).join("");
+}
+
+/* ----- leaderboard ----- */
+let LB=[];
+async function openLeaderboard(){
+  const r=await api("leaderboard",{username:ME.username});
+  if(!r.ok){ LB=[]; return; }
+  LB=(r.users||[]).slice();
+  const sel=document.getElementById("lbClass");
+  const classes=[...new Set(LB.map(u=>u.cls).filter(Boolean))].sort();
+  sel.innerHTML=`<option value="">ทุกห้อง</option>`+classes.map(c=>`<option>${esc(c)}</option>`).join("");
+  if(ME.cls && classes.includes(ME.cls)) sel.value=ME.cls;
+  renderLeaderboard();
+}
+function renderLeaderboard(){
+  const cls=document.getElementById("lbClass").value;
+  const rows=LB.filter(u=>!cls||u.cls===cls).sort((a,b)=>(b.points||0)-(a.points||0));
+  const medal=i=>["🥇","🥈","🥉"][i]||("#"+(i+1));
+  document.getElementById("lbList").innerHTML=rows.map((u,i)=>`
+    <div class="lbRow ${u.username===ME.username?"me":""}">
+      <div class="lbRank">${medal(i)}</div>
+      <div class="lbDot" style="background:${validColor(u.color)}"></div>
+      <div class="lbName">${esc(u.charName||"น้องคณิต")}
+        <small>· ${esc(u.fullname||"")}${u.cls?" · "+esc(u.cls):""}</small></div>
+      <div class="lbPts">⭐ ${u.points||0}</div>
+    </div>`).join("")
+    || `<p class="muted center" style="padding:20px">ยังไม่มีข้อมูลในห้องนี้</p>`;
+}
+
+/* ----- customize ----- */
+function openCustomize(){
+  customizeOriginal={name:ME.charName||"น้องคณิต",color:ME.color||"#4a90ff"};
+  customizeDirty=false;
+  ME._pickColor=customizeOriginal.color;
+  const bot=document.getElementById("custBot"); bot.innerHTML=robotSVG();
+  const wrap=document.getElementById("custBotWrap"); applyColor(wrap,ME.color);
+  document.getElementById("cust_name").value=customizeOriginal.name;
+  document.getElementById("custName").textContent=customizeOriginal.name;
+  const sw=document.getElementById("swatches"); sw.innerHTML="";
+  COLORS.forEach(([name,c])=>{
+    const d=document.createElement("div"); d.className="sw"+(c===ME._pickColor?" on":"");
+    d.style.background=c; d.title=name; d.onclick=()=>pickColor(c,d); sw.appendChild(d);
+  });
+  markSwatch();
+  document.getElementById("cust_name").oninput=e=>{
+    document.getElementById("custName").textContent=e.target.value||"น้องคณิต";
+    updateCustomizeDirty();
+  };
+}
+function pickColor(c,el){
+  ME._pickColor=c; applyColor(document.getElementById("custBotWrap"),c); markSwatch();
+  updateCustomizeDirty();
+}
+function markSwatch(){ document.querySelectorAll("#swatches .sw").forEach(s=>
+  s.classList.toggle("on", s.style.background && rgbToHex(s.style.background)===ME._pickColor)); }
+function rgbToHex(rgb){ const m=rgb.match(/\d+/g); if(!m) return rgb;
+  return "#"+m.slice(0,3).map(n=>(+n).toString(16).padStart(2,"0")).join(""); }
+function updateCustomizeDirty(){
+  if(!customizeOriginal){ customizeDirty=false; return; }
+  const name=val("cust_name")||"น้องคณิต";
+  const color=ME._pickColor||ME.color||"#4a90ff";
+  customizeDirty=name!==customizeOriginal.name || color.toLowerCase()!==customizeOriginal.color.toLowerCase();
+  setMsg("custMsg",customizeDirty?"มีการเปลี่ยนแปลง — กรุณากดบันทึกก่อนออก":"","");
+}
+function leaveCustomize(){
+  if(customizeDirty &&
+    !confirm("ยังไม่ได้บันทึก หากกลับตอนนี้การเปลี่ยนแปลงจะถูกยกเลิกและใช้ค่าเดิม ต้องการกลับหรือไม่?")) return;
+  customizeDirty=false;
+  if(customizeOriginal) ME._pickColor=customizeOriginal.color;
+  customizeOriginal=null;
+  showScreen("appScreen");
+}
+async function saveCharacter(){
+  const name=val("cust_name")||"น้องคณิต"; const color=ME._pickColor||ME.color;
+  setMsg("custMsg","กำลังบันทึก...","");
+  const r=await api("saveCharacter",{username:ME.username,name,color});
+  if(r.ok){
+    ME={...ME,...r.user}; customizeDirty=false; customizeOriginal=null;
+    setMsg("custMsg","บันทึกแล้ว ✔","ok"); renderTop(); setTimeout(()=>showScreen("appScreen"),600);
+  }
+  else setMsg("custMsg",r.error||"บันทึกไม่สำเร็จ","err");
+}
+
+/* ===== ISLAND FARM GAME (เกาะลอยฟ้า มุมมองไอโซเมตริก) ===== */
+let QUESTIONS=[], curTree=null, qOpen=false;
+let farmActive=false, farmRAF=0, farmT=0, farmInit=false;
+const HORIZON=150;                                  // เส้นขอบฟ้า
+const FIELD={x0:34,y0:206,x1:866,y1:566};           // ขอบเขตทุ่งที่เดินได้ (กว้าง)
+const POND={cx:660,cy:480,rx:170,ry:74};
+let trees=[], animals=[], decors=[], player=null, playerImg=null, playerKey="", clouds=null, tufts=null;
+let farmDirty=false, savedFarmState=null;
+let sessionChops=0, sessionStartCoins=0;   // สรุปผลรอบการเล่น
+const keys={};
+
+/* สุ่มโจทย์แบบ shuffle-bag + กรองตามวิชา: จับครบทุกข้อก่อนค่อยวนใหม่ = ไม่เจอข้อซ้ำบ่อย */
+let qBag=[], lastQId=null, currentSubject="";
+function activeQ(){ return currentSubject? QUESTIONS.filter(q=>(q.subject||"คณิตศาสตร์")===currentSubject) : QUESTIONS; }
+function refillBag(){ qBag=activeQ().slice();
+  for(let i=qBag.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [qBag[i],qBag[j]]=[qBag[j],qBag[i]]; }
+  if(qBag.length>1 && qBag[qBag.length-1] && qBag[qBag.length-1].id===lastQId)
+    [qBag[qBag.length-1],qBag[0]]=[qBag[0],qBag[qBag.length-1]]; }   // กันซ้ำตอนขึ้นรอบใหม่
+function randomQ(){ if(!activeQ().length) return null;
+  if(!qBag.length) refillBag();
+  const q=qBag.pop(); if(q) lastQId=q.id; return q; }
+function fillSubjects(){ const sel=document.getElementById("subjectSel"); if(!sel) return;
+  const subs=[...new Set(QUESTIONS.map(q=>q.subject).filter(Boolean))].sort();
+  sel.innerHTML=`<option value="">ทุกวิชา</option>`+subs.map(s=>`<option>${esc(s)}</option>`).join("");
+  if(currentSubject && subs.includes(currentSubject)) sel.value=currentSubject; else currentSubject="";
+}
+function setSubject(s,markDirty=true){ const changed=currentSubject!==s; currentSubject=s; qBag=[]; lastQId=null;
+  if(changed && markDirty) markFarmDirty();
+  if(typeof trees!=="undefined") trees.forEach(t=>{ t.q=randomQ(); }); }
+function ellipsePt(cx,cy,rx,ry){ const t=Math.random()*6.283,r=Math.sqrt(Math.random());
+  return {x:cx+Math.cos(t)*rx*r, y:cy+Math.sin(t)*ry*r}; }
+function fieldPt(){ return {x:FIELD.x0+Math.random()*(FIELD.x1-FIELD.x0), y:FIELD.y0+Math.random()*(FIELD.y1-FIELD.y0)}; }
+function clampField(o){ o.x=Math.max(FIELD.x0,Math.min(FIELD.x1,o.x)); o.y=Math.max(FIELD.y0,Math.min(FIELD.y1,o.y)); }
+function depth(y){ return 0.74 + (y-FIELD.y0)/(FIELD.y1-FIELD.y0)*0.5; }   // ไกล=เล็ก ใกล้=ใหญ่
+
+function buildRobot(){ if(playerKey===ME.color && playerImg) return;
+  const [c,cd]=colorPair(ME.color); const img=new Image();
+  img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(robotSVG(c,cd,"#5ef2c6"));
+  playerImg=img; playerKey=ME.color; }
+
+const TREESPOTS=[[110,250],[250,225],[430,240],[620,225],[800,255],
+                 [150,400],[340,370],[520,410],[700,360],[850,420]];
+function spawnTrees(saved){
+  const spots=Array.isArray(saved)&&saved.length ? saved.map(t=>[Number(t.x),Number(t.y)]) : TREESPOTS;
+  trees=spots.slice(0,20).map(pos=>{ const t={x:pos[0],y:pos[1]}; clampField(t);
+    return {x:t.x,y:t.y,alive:true,regrow:0,q:randomQ()}; });
+}
+function makeAnimal(type){ const fish=type==="fish";
+  const p=fish?ellipsePt(POND.cx,POND.cy,POND.rx-14,POND.ry-9):fieldPt();
+  return {type,emoji:(PETS.find(x=>x.id===type)||{emoji:"🐔"}).emoji,x:p.x,y:p.y,tx:p.x,ty:p.y,
+    pause:Math.random()*100,spd:.45+Math.random()*.4,fish,dir:1}; }
+function loadAnimals(){ animals=[]; Object.entries(ME.pets||{}).forEach(([t,n])=>{ for(let i=0;i<(n||0);i++) animals.push(makeAnimal(t)); }); }
+function loadDecor(){ decors=[]; const d=ME.decor||{};
+  for(let i=0;i<(d.house||0);i++)    decors.push({type:"house",   x:120+i*180, y:300});
+  for(let i=0;i<(d.fountain||0);i++) decors.push({type:"fountain",x:430+i*120, y:300});
+  for(let i=0;i<(d.statue||0);i++)   decors.push({type:"statue",  x:840,       y:280+i*80});
+  for(let i=0;i<(d.flower||0);i++)   decors.push({type:"flower",  x:70+i*90,   y:552});
+  for(let i=0;i<(d.fence||0);i++)    decors.push({type:"fence",   x:60+i*44,   y:236}); }
+
+async function openFarm(){
+  savedFarmState=null;
+  const f=await api("getFarm",{username:ME.username}); if(f.ok){
+    ME.coins=f.coins; ME.pets=f.pets||{}; ME.decor=f.decor||{};
+    savedFarmState=f.farmState||null;
+    if(Array.isArray(f.shop) && f.shop.length){
+      PETS=f.shop.filter(x=>x.type==="pets");
+      DECOR=f.shop.filter(x=>x.type==="decor");
+    }
+  }
+  const q=await api("getQuestions"); QUESTIONS=q.questions||[]; qBag=[]; lastQId=null;
+  currentSubject=savedFarmState&&typeof savedFarmState.subject==="string"?savedFarmState.subject:"";
+  fillSubjects();
+  buildRobot(); updateCoins();
+  const savedPlayer=savedFarmState&&savedFarmState.player?savedFarmState.player:{x:450,y:500};
+  player={x:Number(savedPlayer.x)||450,y:Number(savedPlayer.y)||500,tx:null,ty:null,dir:1,pend:-1};
+  clampField(player);
+  spawnTrees(savedFarmState&&savedFarmState.trees); loadAnimals(); loadDecor(); initFarmInput();
+  sessionChops=0; sessionStartCoins=ME.coins||0;
+  farmDirty=false; updateFarmSaveButton();
+  farmActive=true; farmT=0; if(!farmRAF) farmLoop();
+}
+function exitFarm(){
+  if(farmDirty &&
+    !confirm("ยังไม่ได้บันทึกฟาร์ม หากกลับตอนนี้ระบบจะใช้ข้อมูลที่บันทึกเดิม ต้องการกลับโดยไม่บันทึกหรือไม่?")) return;
+  farmDirty=false; farmActive=false; if(farmRAF){cancelAnimationFrame(farmRAF);farmRAF=0;}
+  const earned=(ME.coins||0)-sessionStartCoins;
+  showScreen("appScreen");
+  if(sessionChops>0) setTimeout(()=>toast(`รอบนี้: ตัดไม้ ${sessionChops} ต้น · ได้ ${earned} 🪙`,2600,"#37c26b","#04210f"),250);
+}
+function farmSnapshot(){
+  return {version:1,player:{x:Math.round(player.x),y:Math.round(player.y)},subject:currentSubject||"",
+    trees:trees.map(t=>({x:Math.round(t.x),y:Math.round(t.y)}))};
+}
+function markFarmDirty(){ if(!farmActive)return; farmDirty=true; updateFarmSaveButton(); }
+function updateFarmSaveButton(){
+  const b=document.getElementById("saveFarmBtn"); if(!b)return;
+  b.textContent=farmDirty?"💾 บันทึกฟาร์ม •":"✅ บันทึกแล้ว";
+}
+async function saveFarmState(){
+  if(!player)return;
+  const state=farmSnapshot();
+  const b=document.getElementById("saveFarmBtn"); if(b){b.disabled=true;b.textContent="กำลังบันทึก...";}
+  const r=await api("saveFarmState",{username:ME.username,state});
+  if(b)b.disabled=false;
+  if(!r.ok){ farmDirty=true; updateFarmSaveButton();
+    return toast(r.error||"บันทึกฟาร์มไม่สำเร็จ",1900,"var(--bad)","#3a0000"); }
+  savedFarmState=r.farmState||state;
+  farmDirty=JSON.stringify(farmSnapshot())!==JSON.stringify(state);
+  updateFarmSaveButton();
+  toast("บันทึกฟาร์มแล้ว ✔",1500,"#37c26b","#04210f");
+}
+function updateCoins(){ ["coinCount","coinCount2"].forEach(id=>{const e=document.getElementById(id); if(e)e.textContent=ME.coins||0;}); }
+
+/* ---- input ---- */
+function cvPt(clientX,clientY){ const c=document.getElementById("island"),r=c.getBoundingClientRect();
+  return {x:(clientX-r.left)*(c.width/r.width), y:(clientY-r.top)*(c.height/r.height)}; }
+function initFarmInput(){ if(farmInit) return; farmInit=true;
+  const c=document.getElementById("island");
+  c.addEventListener("pointerdown",e=>{ if(qOpen)return; Sound.resume(); const p=cvPt(e.clientX,e.clientY);
+    let ah=-1,ab=32; animals.forEach((a,i)=>{ const d=Math.hypot(a.x-p.x,a.y-(p.y-14)); if(d<ab){ab=d;ah=i;} });
+    if(ah>=0){ Sound.animal(animals[ah].type); return; }
+    let hit=-1,best=52; trees.forEach((t,i)=>{ if(!t.alive)return; const d=Math.hypot(t.x-p.x,t.y-p.y); if(d<best){best=d;hit=i;} });
+    if(hit>=0){ player.tx=trees[hit].x; player.ty=trees[hit].y+30; player.pend=hit; }
+    else { const q={x:p.x,y:p.y}; clampField(q); player.tx=q.x; player.ty=q.y; player.pend=-1; } });
+  document.querySelectorAll("#joy .jb").forEach(b=>{ const k=b.dataset.k;
+    if(k){ const on=e=>{e.preventDefault();keys[k]=true;},off=e=>{e.preventDefault();keys[k]=false;};
+      b.addEventListener("pointerdown",on); b.addEventListener("pointerup",off);
+      b.addEventListener("pointerleave",off); b.addEventListener("pointercancel",off); }
+    else if(b.dataset.act==="chop"){ b.addEventListener("pointerdown",e=>{e.preventDefault();chopNearest();}); } });
+}
+addEventListener("keydown",e=>{ if(!farmActive) return;
+  if(document.activeElement && document.activeElement.id==="qAnswer") return;
+  const k=e.key;
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(k)) e.preventDefault();
+  if(k===" "){ if(!qOpen) chopNearest(); return; }
+  keys[k]=true;
+  if(k==="w"||k==="W")keys.ArrowUp=true; if(k==="s"||k==="S")keys.ArrowDown=true;
+  if(k==="a"||k==="A")keys.ArrowLeft=true; if(k==="d"||k==="D")keys.ArrowRight=true; });
+addEventListener("keyup",e=>{ const k=e.key; keys[k]=false;
+  if(k==="w"||k==="W")keys.ArrowUp=false; if(k==="s"||k==="S")keys.ArrowDown=false;
+  if(k==="a"||k==="A")keys.ArrowLeft=false; if(k==="d"||k==="D")keys.ArrowRight=false; });
+function chopNearest(){ let hit=-1,best=80; trees.forEach((t,i)=>{ if(!t.alive)return;
+  const d=Math.hypot(t.x-player.x,t.y-player.y); if(d<best){best=d;hit=i;} }); if(hit>=0) openChop(hit); }
+
+/* ---- step ---- */
+function stepPlayer(){
+  let vx=0,vy=0;
+  if(keys.ArrowLeft)vx--; if(keys.ArrowRight)vx++; if(keys.ArrowUp)vy--; if(keys.ArrowDown)vy++;
+  if(vx||vy){ const m=Math.hypot(vx,vy); player.x+=vx/m*3.1; player.y+=vy/m*3.1;
+    player.pend=-1; player.tx=player.x; player.ty=player.y; if(vx)player.dir=vx<0?-1:1; markFarmDirty(); }
+  else if(player.tx!=null){ const dx=player.tx-player.x,dy=player.ty-player.y,d=Math.hypot(dx,dy);
+    if(d>3){ player.x+=dx/d*3.1; player.y+=dy/d*3.1; if(Math.abs(dx)>.4)player.dir=dx<0?-1:1; markFarmDirty(); }
+    else if(player.pend>=0){ const i=player.pend; player.pend=-1; openChop(i); } }
+  clampField(player);
+}
+function stepAnimal(a){ if(a.pause>0){a.pause--;return;}
+  const dx=a.tx-a.x,dy=a.ty-a.y,d=Math.hypot(dx,dy);
+  if(d>3){ a.x+=dx/d*a.spd; a.y+=dy/d*a.spd; if(Math.abs(dx)>.3)a.dir=dx<0?-1:1; }
+  else { a.pause=40+Math.random()*140;
+    const p=a.fish?ellipsePt(POND.cx,POND.cy,POND.rx-14,POND.ry-9):fieldPt();
+    a.tx=p.x; a.ty=p.y; } }
+
+/* ---- question ---- */
+function openChop(i){ const t=trees[i]; if(!t||!t.alive) return;
+  if(!t.q){ toast("คุณครูยังไม่ได้ตั้งโจทย์",1800,"var(--warn)","#3a2c00"); return; }
+  curTree=i; qOpen=true;
+  document.getElementById("qText").textContent=t.q.question;
+  const a=document.getElementById("qAnswer"); a.value=""; document.getElementById("qMsg").textContent="";
+  document.getElementById("qModal").style.display="grid"; setTimeout(()=>a.focus(),50);
+}
+function closeQ(){ document.getElementById("qModal").style.display="none"; qOpen=false; curTree=null; }
+async function submitAnswer(){
+  if(curTree==null) return; const t=trees[curTree];
+  const ans=document.getElementById("qAnswer").value;
+  if(!ans.trim()){ document.getElementById("qMsg").textContent="พิมพ์คำตอบก่อนนะ"; return; }
+  Sound.click();
+  const r=await api("answerQuestion",{username:ME.username,questionId:t.q.id,answer:ans});
+  if(r.ok && r.correct){ ME.coins=r.coins; updateCoins(); Sound.chop(); Sound.correct(); sessionChops++;
+    t.alive=false; t.regrow=farmT+300; closeQ(); toast(`ถูกต้อง! +${r.reward} 🪙`,1600,"#ffd23e","#3a2c00"); }
+  else if(r.ok){ Sound.wrong(); const m=document.getElementById("qMsg"); m.className="msg err"; m.textContent="ยังไม่ถูก ลองอีกครั้ง 💪";
+    document.getElementById("qAnswer").select(); }
+  else document.getElementById("qMsg").textContent=r.error||"เกิดข้อผิดพลาด";
+}
+
+/* ---- shop ---- */
+let shopMode="pets";
+function openShop(){ renderShop(); document.getElementById("shopModal").classList.add("on"); }
+function closeShop(){ document.getElementById("shopModal").classList.remove("on"); }
+function shopTab(m){ shopMode=m;
+  document.getElementById("stab-pets").classList.toggle("on",m==="pets");
+  document.getElementById("stab-decor").classList.toggle("on",m==="decor"); renderShop(); }
+function renderShop(){ updateCoins();
+  const list=shopMode==="pets"?PETS:DECOR, fn=shopMode==="pets"?"buyPet":"buyDecor";
+  document.getElementById("shopGrid").innerHTML=list.map(p=>{ const afford=(ME.coins||0)>=p.price;
+    return `<div class="shopCard"><div class="pe">${p.emoji}</div><div class="pn">${p.name}</div>
+      <div class="pp">🪙 ${p.price.toLocaleString()}</div>
+      <button class="btn sm" ${afford?"":"disabled"} onclick="${fn}('${p.id}')">ซื้อ</button></div>`; }).join("");
+}
+async function buyPet(id){ const r=await api("buyPet",{username:ME.username,petId:id});
+  if(r.ok){ ME.coins=r.coins; ME.pets=r.pets; updateCoins(); renderShop(); animals.push(makeAnimal(id)); Sound.buy(); Sound.animal(id);
+    const pet=PETS.find(x=>x.id===id); toast(`ซื้อ${pet.name} ${pet.emoji}!`); }
+  else toast(r.error||"ซื้อไม่สำเร็จ",1800,"var(--bad)","#3a0000"); }
+async function buyDecor(id){ const r=await api("buyDecor",{username:ME.username,decorId:id});
+  if(r.ok){ ME.coins=r.coins; ME.decor=r.decor; updateCoins(); renderShop(); loadDecor(); Sound.buy();
+    const it=DECOR.find(x=>x.id===id); toast(`ซื้อ${it.name} ${it.emoji}!`); }
+  else toast(r.error||"ซื้อไม่สำเร็จ",1800,"var(--bad)","#3a0000"); }
+
+/* ---- render loop ---- */
+let animalTimer=240;
+function farmLoop(){ if(!farmActive){farmRAF=0;return;} farmT++;
+  if(!qOpen) stepPlayer(); animals.forEach(stepAnimal);
+  trees.forEach(t=>{ if(!t.alive && farmT>=t.regrow){ t.alive=true; t.q=randomQ(); } });
+  if(animals.length && --animalTimer<=0){ animalTimer=200+Math.random()*280;
+    Sound.animal(animals[(Math.random()*animals.length)|0].type); }
+  drawFarm(); farmRAF=requestAnimationFrame(farmLoop); }
+function el(x,cx,cy,rx,ry){ x.beginPath(); x.ellipse(cx,cy,rx,ry,0,0,6.2832); }
+function shadow(x,cx,cy,rx){ x.fillStyle="rgba(0,0,0,.16)"; el(x,cx,cy,rx,rx*0.42); x.fill(); }
+function drawClouds(x,W){ if(!clouds){ clouds=[]; for(let i=0;i<5;i++) clouds.push({x:Math.random()*W,y:30+Math.random()*170,s:18+Math.random()*24,v:.2+Math.random()*.35}); }
+  x.fillStyle="rgba(255,255,255,.9)";
+  clouds.forEach(cl=>{ cl.x+=cl.v; if(cl.x>W+70)cl.x=-70;
+    el(x,cl.x,cl.y,cl.s*1.6,cl.s); x.fill(); el(x,cl.x+cl.s,cl.y+6,cl.s*1.1,cl.s*.8); x.fill(); el(x,cl.x-cl.s,cl.y+6,cl.s*1.1,cl.s*.8); x.fill(); }); }
+function rr(x,X,Y,w,h,r){ x.beginPath(); x.moveTo(X+r,Y); x.arcTo(X+w,Y,X+w,Y+h,r);
+  x.arcTo(X+w,Y+h,X,Y+h,r); x.arcTo(X,Y+h,X,Y,r); x.arcTo(X,Y,X+w,Y,r); x.closePath(); }
+function drawField(x,W,H){
+  // sky
+  const sky=x.createLinearGradient(0,0,0,HORIZON+80); sky.addColorStop(0,"#7ec8ff"); sky.addColorStop(1,"#dff3ff");
+  x.fillStyle=sky; x.fillRect(0,0,W,HORIZON+80);
+  drawClouds(x,W);
+  // distant hills at horizon
+  x.fillStyle="#a6e29a";
+  x.beginPath(); x.moveTo(0,HORIZON+6);
+  for(let i=0;i<=W;i+=90) x.quadraticCurveTo(i+45,HORIZON-30,i+90,HORIZON+6);
+  x.lineTo(W,HORIZON+40); x.lineTo(0,HORIZON+40); x.closePath(); x.fill();
+  // wide grass field
+  const g=x.createLinearGradient(0,HORIZON,0,H); g.addColorStop(0,"#8ad86e"); g.addColorStop(1,"#68bf54");
+  x.fillStyle=g; x.fillRect(0,HORIZON+30,W,H-HORIZON-30);
+  // grass texture tufts (static)
+  if(!tufts){ tufts=[]; for(let i=0;i<70;i++) tufts.push({x:Math.random()*W,y:HORIZON+40+Math.random()*(H-HORIZON-50)}); }
+  x.strokeStyle="rgba(60,150,60,.5)"; x.lineWidth=2;
+  tufts.forEach(t=>{ x.beginPath(); x.moveTo(t.x,t.y); x.lineTo(t.x-3,t.y-6); x.moveTo(t.x,t.y); x.lineTo(t.x+3,t.y-6); x.stroke(); });
+  // pond
+  x.fillStyle="#2f7fc0"; el(x,POND.cx,POND.cy,POND.rx,POND.ry); x.fill();
+  x.fillStyle="#5aa9e6"; el(x,POND.cx,POND.cy-3,POND.rx-9,POND.ry-8); x.fill();
+  x.fillStyle="rgba(255,255,255,.35)"; el(x,POND.cx-POND.rx*0.35,POND.cy-6,POND.rx*0.3,POND.ry*0.28); x.fill();
+}
+function drawFarm(){ const c=document.getElementById("island"); if(!c) return; const x=c.getContext("2d");
+  const W=c.width,H=c.height; x.clearRect(0,0,W,H);
+  drawField(x,W,H);
+  let hint=-1,best=80; if(player) trees.forEach((t,i)=>{ if(!t.alive)return; const d=Math.hypot(t.x-player.x,t.y-player.y); if(d<best){best=d;hint=i;} });
+  const ents=[];
+  decors.forEach(d=>ents.push({y:d.y,f:()=>drawDecor(x,d)}));
+  trees.forEach((t,i)=>{ if(t.alive) ents.push({y:t.y,f:()=>drawTree(x,t,i===hint)}); });
+  animals.forEach(a=>ents.push({y:a.y,f:()=>drawAnimal(x,a)}));
+  if(player) ents.push({y:player.y,f:()=>drawPlayer(x)});
+  ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
+}
+function drawDecor(x,d){ const s=depth(d.y); x.save(); x.translate(d.x,d.y);
+  if(d.type==="house") drawHouse(x,s); else if(d.type==="fence") drawFence(x,s);
+  else if(d.type==="fountain") drawFountain(x,s); else if(d.type==="statue") drawStatue(x,s);
+  else drawFlower(x,s); x.restore(); }
+function drawHouse(x,s){ const w=70*s,h=48*s,bx=-w/2,by=-h;
+  x.fillStyle="rgba(0,0,0,.18)"; el(x,0,0,w*0.55,9*s); x.fill();
+  x.fillStyle="#f2d0a4"; x.fillRect(bx,by,w,h);
+  x.fillStyle="#e5b985"; x.fillRect(bx,by+h-6*s,w,6*s);
+  x.fillStyle="#c0492e"; x.beginPath(); x.moveTo(bx-8*s,by); x.lineTo(0,by-32*s); x.lineTo(bx+w+8*s,by); x.closePath(); x.fill();
+  x.fillStyle="#a53b23"; x.beginPath(); x.moveTo(bx-8*s,by); x.lineTo(0,by-32*s); x.lineTo(0,by); x.closePath(); x.fill();
+  x.fillStyle="#8a5a2b"; x.fillRect(-9*s,by+h-24*s,18*s,24*s);
+  x.fillStyle="#ffd23e"; el(x,5*s,by+h-12*s,1.8*s,1.8*s); x.fill();
+  x.fillStyle="#bfe6ff"; x.fillRect(bx+10*s,by+12*s,15*s,15*s);
+  x.strokeStyle="#fff"; x.lineWidth=2*s; x.strokeRect(bx+10*s,by+12*s,15*s,15*s);
+  x.beginPath(); x.moveTo(bx+17.5*s,by+12*s); x.lineTo(bx+17.5*s,by+27*s); x.moveTo(bx+10*s,by+19.5*s); x.lineTo(bx+25*s,by+19.5*s); x.stroke(); }
+function drawFence(x,s){ const w=46*s;
+  x.fillStyle="rgba(0,0,0,.14)"; el(x,0,0,w*0.5,5*s); x.fill();
+  x.fillStyle="#c58b4e";
+  [-w*0.36,w*0.36].forEach(px=>{ x.fillRect(px-3*s,-32*s,6*s,32*s);
+    x.beginPath(); x.moveTo(px-3*s,-32*s); x.lineTo(px,-37*s); x.lineTo(px+3*s,-32*s); x.closePath(); x.fill(); });
+  x.fillStyle="#b3773d"; x.fillRect(-w*0.5,-27*s,w,5*s); x.fillRect(-w*0.5,-15*s,w,5*s); }
+function drawFountain(x,s){
+  x.fillStyle="rgba(0,0,0,.16)"; el(x,0,0,32*s,9*s); x.fill();
+  x.fillStyle="#b8c2cc"; el(x,0,-7*s,30*s,13*s); x.fill();
+  x.fillStyle="#5aa9e6"; el(x,0,-8*s,24*s,9*s); x.fill();
+  x.fillStyle="#cdd6df"; x.fillRect(-4*s,-28*s,8*s,21*s); x.fillStyle="#9fb0bf"; el(x,0,-28*s,11*s,4*s); x.fill();
+  x.strokeStyle="rgba(120,200,255,.85)"; x.lineWidth=2.4*s;
+  x.beginPath(); x.moveTo(0,-28*s); x.quadraticCurveTo(-9*s,-38*s,-13*s,-26*s);
+  x.moveTo(0,-28*s); x.quadraticCurveTo(9*s,-38*s,13*s,-26*s); x.stroke(); }
+function drawStatue(x,s){
+  x.fillStyle="rgba(0,0,0,.16)"; el(x,0,0,18*s,6*s); x.fill();
+  x.fillStyle="#aeb6bd"; x.fillRect(-13*s,-9*s,26*s,9*s);
+  x.fillStyle="#cfd6dd"; x.fillRect(-7*s,-36*s,14*s,27*s); el(x,0,-42*s,7.5*s,7.5*s); x.fill();
+  x.fillStyle="#aab2b9"; x.fillRect(-7*s,-36*s,5*s,27*s); }
+function drawFlower(x,s){
+  x.fillStyle="rgba(0,0,0,.12)"; el(x,0,0,22*s,6*s); x.fill();
+  const cols=["#ff6fae","#ffd23e","#ff5d5d","#9b6dff","#ff9d3e","#5ef2c6"];
+  for(let i=0;i<6;i++){ const fx=(-17+i*7)*s, fy=(-8-((i%2)*7))*s;
+    x.strokeStyle="#3a8b3d"; x.lineWidth=1.5*s; x.beginPath(); x.moveTo(fx,0); x.lineTo(fx,fy); x.stroke();
+    x.fillStyle=cols[i%cols.length]; el(x,fx,fy-3*s,3.4*s,3.4*s); x.fill();
+    x.fillStyle="rgba(255,255,255,.6)"; el(x,fx,fy-3*s,1.3*s,1.3*s); x.fill(); } }
+function drawTree(x,t,hi){ const s=depth(t.y), tx=t.x, ty=t.y;
+  const cast=x.createRadialGradient(tx-8*s,ty-2*s,2,tx,ty,39*s);
+  cast.addColorStop(0,"rgba(0,0,0,.28)"); cast.addColorStop(1,"rgba(0,0,0,0)");
+  x.fillStyle=cast; el(x,tx+8*s,ty+2*s,42*s,14*s); x.fill();
+  const tw=16*s, th=39*s;
+  const trunk=x.createLinearGradient(tx-tw/2,0,tx+tw/2,0);
+  trunk.addColorStop(0,"#4d2b12"); trunk.addColorStop(.28,"#8a5527");
+  trunk.addColorStop(.62,"#b87a3f"); trunk.addColorStop(1,"#5b3518");
+  x.fillStyle=trunk; rr(x,tx-tw/2,ty-th,tw,th,4*s); x.fill();
+  x.strokeStyle="rgba(255,220,165,.28)"; x.lineWidth=1.5*s;
+  x.beginPath(); x.moveTo(tx-2*s,ty-th+5*s); x.lineTo(tx-1*s,ty-5*s); x.stroke();
+  x.strokeStyle="#68401f"; x.lineWidth=6*s; x.lineCap="round";
+  x.beginPath(); x.moveTo(tx,ty-th+8*s); x.lineTo(tx-18*s,ty-th-9*s);
+  x.moveTo(tx+2*s,ty-th+5*s); x.lineTo(tx+18*s,ty-th-12*s); x.stroke();
+  const fy=ty-th-22*s, R=31*s;
+  const blob=(cx,cy,rx,ry)=>{
+    const g=x.createRadialGradient(cx-rx*.38,cy-ry*.42,2,cx,cy,Math.max(rx,ry));
+    g.addColorStop(0,"#8bea79"); g.addColorStop(.28,"#55c85f");
+    g.addColorStop(.72,"#2d8d42"); g.addColorStop(1,"#165b2d");
+    x.fillStyle=g; el(x,cx,cy,rx,ry); x.fill();
+    x.fillStyle="rgba(255,255,255,.14)"; el(x,cx-rx*.28,cy-ry*.35,rx*.28,ry*.2); x.fill();
+  };
+  blob(tx-R*.78,fy+R*.38,R*.78,R*.7);
+  blob(tx+R*.78,fy+R*.4,R*.8,R*.72);
+  blob(tx,fy+R*.15,R,R*.9);
+  blob(tx-R*.05,fy-R*.55,R*.8,R*.76);
+  x.fillStyle="rgba(13,73,34,.28)"; el(x,tx+R*.22,fy+R*.62,R*.65,R*.22); x.fill();
+  x.fillStyle="rgba(255,255,255,.24)"; el(x,tx-R*.28,fy-R*.55,R*.28,R*.16); x.fill();
+  if(hi){ x.font=`${Math.round(30*s)}px serif`; x.textAlign="center"; x.textBaseline="alphabetic";
+    x.fillText("🪓",tx+R+8*s,fy-Math.sin(farmT/6)*3); } }
+function drawAnimal(x,a){ const s=depth(a.y), mv=a.pause<=0;
+  x.save(); x.translate(a.x,a.y); x.scale(s,s); if(a.dir<0)x.scale(-1,1);
+  if(a.type==="fish"){ drawFish(x); }
+  else { x.fillStyle="rgba(0,0,0,.18)"; el(x,0,0,16,5); x.fill();
+    if(a.type==="duck") drawDuck(x,mv); else if(a.type==="pig") drawPig(x,mv); else drawChicken(x,mv); }
+  x.restore(); }
+function drawChicken(x,mv){ const b=mv?Math.sin(farmT*.35):0; x.save(); x.translate(0,b);
+  x.strokeStyle="#ef9b2e"; x.lineWidth=2.2; x.beginPath(); x.moveTo(-2,-6);x.lineTo(-3,0); x.moveTo(4,-6);x.lineTo(5,0); x.stroke();
+  x.fillStyle="#f0f0f0"; x.beginPath(); x.moveTo(-10,-14);x.lineTo(-21,-23);x.lineTo(-10,-25); x.closePath(); x.fill();
+  x.fillStyle="#fff"; el(x,0,-14,14,12); x.fill();
+  x.fillStyle="#eee"; el(x,-2,-13,7,6); x.fill();
+  x.fillStyle="#fff"; el(x,10,-26,8,8); x.fill();
+  x.fillStyle="#e5484d"; el(x,8,-33,3,3); x.fill(); el(x,12,-34,3,3); x.fill();
+  x.fillStyle="#ff9d2e"; x.beginPath(); x.moveTo(17,-26);x.lineTo(25,-24);x.lineTo(17,-22); x.closePath(); x.fill();
+  x.fillStyle="#e5484d"; el(x,17,-20,2.4,3.4); x.fill();
+  x.fillStyle="#222"; el(x,12,-27,1.6,1.6); x.fill(); x.restore(); }
+function drawDuck(x,mv){ const b=mv?Math.sin(farmT*.35):0; x.save(); x.translate(0,b);
+  x.strokeStyle="#ef9b2e"; x.lineWidth=2.2; x.beginPath(); x.moveTo(-1,-5);x.lineTo(-2,0); x.moveTo(4,-5);x.lineTo(5,0); x.stroke();
+  x.fillStyle="#ffd23e"; x.beginPath(); x.moveTo(-12,-14);x.lineTo(-20,-19);x.lineTo(-12,-21); x.closePath(); x.fill();
+  x.fillStyle="#ffd23e"; el(x,0,-14,15,11); x.fill();
+  x.fillStyle="#f0be2a"; el(x,-2,-13,7,5); x.fill();
+  x.fillStyle="#ffd23e"; el(x,8,-19,5,7); x.fill(); el(x,12,-25,7.5,8); x.fill();
+  x.fillStyle="#ff9d2e"; el(x,20,-25,5.5,3); x.fill();
+  x.fillStyle="#222"; el(x,13,-27,1.6,1.6); x.fill(); x.restore(); }
+function drawPig(x,mv){ const b=mv?Math.sin(farmT*.35):0; x.save(); x.translate(0,b);
+  x.strokeStyle="#d67a97"; x.lineWidth=3; x.beginPath(); x.moveTo(-7,-6);x.lineTo(-7,0); x.moveTo(-1,-6);x.lineTo(-1,0); x.moveTo(5,-6);x.lineTo(5,0); x.stroke();
+  x.strokeStyle="#e58aa8"; x.lineWidth=2; x.beginPath(); x.arc(-16,-17,3.2,0.3,5); x.stroke();
+  x.fillStyle="#f4a6c0"; el(x,0,-16,17,12); x.fill();
+  x.fillStyle="#ec86a8"; x.beginPath(); x.moveTo(10,-27);x.lineTo(15,-31);x.lineTo(17,-24); x.closePath(); x.fill();
+  x.fillStyle="#f4a6c0"; el(x,14,-17,10,9); x.fill();
+  x.fillStyle="#ec86a8"; el(x,23,-16,5,4.2); x.fill();
+  x.fillStyle="#b95f7d"; el(x,22,-16,1,1.6); x.fill(); el(x,25,-16,1,1.6); x.fill();
+  x.fillStyle="#5a2f3f"; el(x,16,-20,1.7,1.7); x.fill(); x.restore(); }
+function drawFish(x){ const w=Math.sin(farmT*.3)*2;
+  x.save(); x.translate(0,-4);
+  x.fillStyle="#e0722a"; x.beginPath(); x.moveTo(-9,-2+w);x.lineTo(-18,-8);x.lineTo(-18,4); x.closePath(); x.fill();
+  x.fillStyle="#ff8c3a"; el(x,0,0,13,8); x.fill();
+  x.fillStyle="#e0722a"; x.beginPath(); x.moveTo(-3,-8);x.lineTo(4,-8);x.lineTo(0,-1); x.closePath(); x.fill();
+  x.fillStyle="#fff"; el(x,7,-1,2.6,2.6); x.fill(); x.fillStyle="#222"; el(x,8,-1,1.3,1.3); x.fill();
+  x.restore(); }
+function drawPlayer(x){ const s=depth(player.y); x.fillStyle="rgba(0,0,0,.18)"; el(x,player.x,player.y+2,20*s,8*s); x.fill();
+  const h=78*s,w=h*240/260;
+  if(playerImg && playerImg.complete && playerImg.naturalWidth){
+    x.save(); x.translate(player.x,player.y); if(player.dir<0)x.scale(-1,1);
+    x.drawImage(playerImg,-w/2,-h+8,w,h); x.restore();
+  } else { x.fillStyle=ME.color||"#4a90ff"; el(x,player.x,player.y-24*s,18*s,22*s); x.fill(); }
+  const nm=ME.charName||"น้องคณิต"; x.font="bold 15px 'TH Sarabun New',sans-serif"; x.textAlign="center";
+  const tw=x.measureText(nm).width+14; x.fillStyle="rgba(5,10,25,.62)";
+  x.fillRect(player.x-tw/2,player.y-h-2,tw,20); x.fillStyle="#fff"; x.textBaseline="middle";
+  x.fillText(nm,player.x,player.y-h+8); }
+
+/* ----- helpers ----- */
+function esc(s){ return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function validColor(s){ return /^#[0-9a-f]{6}$/i.test(String(s||"")) ? s : "#4a90ff"; }
+function toast(t,dur,bg,fg){ const d=document.createElement("div"); d.textContent=t;
+  d.style.cssText="position:fixed;top:20px;left:50%;transform:translateX(-50%);background:"+(bg||"var(--good)")+";"+
+    "color:"+(fg||"#04210f")+";font-weight:800;padding:12px 24px;border-radius:12px;z-index:99;box-shadow:0 8px 20px rgba(0,0,0,.4)";
+  document.body.appendChild(d); setTimeout(()=>d.remove(),dur||1600); }
+
+/* ----- boot ----- */
+document.getElementById("authBot").innerHTML=robotSVG();
+document.getElementById("modeTag").textContent = CONFIG.GAS_URL ? "โหมด: เชื่อมต่อ Google Sheets" : "GitHub Pages · บันทึกในเครื่อง";
+addEventListener("pointerdown",()=>Sound.resume(),{passive:true});   // ปลดล็อกเสียงเมื่อมีการแตะครั้งแรก
+addEventListener("beforeunload",e=>{
+  if(!customizeDirty && !farmDirty) return;
+  e.preventDefault();
+  e.returnValue="";
+});
+(async function boot(){
+  const s=localStorage.getItem("cb_session"), token=localStorage.getItem("cb_token");
+  if(s && (!CONFIG.GAS_URL || token)){ const r=await api("getProfile",{username:s}); if(r.ok){ ME=r.user; enterApp(); } }
+})();
+</script>
+</body>
+</html>
