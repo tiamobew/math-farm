@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ฟาร์มคณิต — หน้าจัดการระบบ (แอดมิน)</title>
 <style>
   :root{--bg1:#0f1830;--card:#182545;--line:#2a3d6b;--ink:#eaf1ff;--muted:#9fb2d8;
@@ -10,10 +10,11 @@
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:"TH Sarabun New","Sarabun","Segoe UI",Tahoma,sans-serif;
     background:radial-gradient(1200px 600px at 70% -10%,#24356b 0%,var(--bg1) 55%);color:var(--ink);
-    min-height:100vh;font-size:18px}
+    min-height:100vh;min-height:100dvh;font-size:18px;-webkit-text-size-adjust:100%;overflow-x:hidden}
   .wrap{max-width:1080px;margin:0 auto;padding:18px}
   h1,h2,h3{font-weight:800} .muted{color:var(--muted)} .accent{color:var(--accent)}
-  button{font-family:inherit;cursor:pointer;border:none;font-size:17px}
+  button{font-family:inherit;cursor:pointer;border:none;font-size:17px;touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent}
   .btn{background:linear-gradient(var(--c),var(--cd));color:#fff;font-weight:800;padding:10px 20px;
     border-radius:10px;box-shadow:0 5px 14px rgba(0,0,0,.3)}
   .btn.ghost{background:transparent;border:2px solid var(--line);color:var(--ink);box-shadow:none}
@@ -82,6 +83,37 @@
   .lightbox.on{display:grid}
   .lightbox img{max-width:95%;max-height:90vh;border-radius:12px}
   .lightbox .x{position:absolute;top:16px;right:20px;font-size:34px;color:#fff;cursor:pointer;font-weight:800}
+  @media(max-width:719px){
+    .wrap{padding:10px}
+    .card{padding:14px;border-radius:14px}
+    .btn{min-height:44px;padding:9px 14px}
+    .btn.sm{min-height:40px;padding:7px 10px;font-size:15px}
+    #loginScreen .card{margin:max(12px,env(safe-area-inset-top)) 10px}
+    .logo{font-size:40px}
+    .top{flex-wrap:wrap;gap:8px}
+    .top h1{width:calc(100% - 48px);flex:none;font-size:21px}
+    .top .btn{flex:1}
+    .stats{gap:8px}
+    .stat{padding:11px 7px}
+    .stat .n{font-size:25px}
+    .tabbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+    .tabbar button{min-height:44px;padding:7px 6px;font-size:15px}
+    .row>input,.row>select,.row>div{max-width:none!important;width:100%!important;min-width:0!important}
+    .row>.btn{width:100%}
+    .mrow{align-items:flex-start;flex-wrap:wrap}
+    .mrow .t{min-width:calc(100% - 50px)}
+    .mrow .btn{flex:1}
+    .tbl{min-width:720px}
+    .tblwrap{max-height:58dvh;-webkit-overflow-scrolling:touch}
+    .modal{padding:8px}
+    .modal .box{padding:14px;max-height:calc(100dvh - 16px);overflow-y:auto}
+    .evGrid{gap:8px}
+    .modeTag{display:none}
+  }
+  @media(max-width:380px){
+    .stats{grid-template-columns:1fr}
+    .tabbar{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
