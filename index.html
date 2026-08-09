@@ -624,7 +624,7 @@
   </div>
 </div>
 
-<div class="modeTag" id="modeTag">โหมด: ออฟไลน์ (ทดลอง)</div>
+<div class="modeTag" id="modeTag">Dev Create By ครูบิว</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./supabase-config.js"></script>
@@ -1568,9 +1568,7 @@ function toast(t,dur,bg,fg){ const d=document.createElement("div"); d.textConten
 
 /* ----- boot ----- */
 document.getElementById("authBot").innerHTML=robotSVG();
-document.getElementById("modeTag").textContent = window.supabaseApi&&window.supabaseApi.enabled
-  ? "Supabase · บันทึกออนไลน์ทุกอุปกรณ์"
-  : (CONFIG.GAS_URL ? "โหมด: เชื่อมต่อ Google Sheets" : "ยังไม่ได้เชื่อม Supabase · บันทึกในเครื่อง");
+document.getElementById("modeTag").textContent = "Dev Create By ครูบิว";
 if(window.supabaseApi&&window.supabaseApi.enabled){
   window.supabaseApi.subscribe(()=>{
     if(ME) loadMissions();

@@ -323,7 +323,7 @@
   <span class="x">✕</span><img id="lightboxImg" src="" alt="">
 </div>
 
-<div class="modeTag" id="modeTag"></div>
+<div class="modeTag" id="modeTag">Dev Create By ครูบิว</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./supabase-config.js"></script>
@@ -787,9 +787,7 @@ function safePhotoUrl(s){
   const u=String(s||"");
   return /^https:\/\/drive\.google\.com\/thumbnail\?id=[A-Za-z0-9_-]+(?:&sz=w\d+)?$/.test(u) ? esc(u) : "";
 }
-document.getElementById("modeTag").textContent=window.supabaseApi&&window.supabaseApi.enabled
-  ? "Supabase · ข้อมูลออนไลน์"
-  : (CONFIG.GAS_URL?"โหมด: เชื่อมต่อ Google Sheets":"ยังไม่ได้เชื่อม Supabase");
+document.getElementById("modeTag").textContent="Dev Create By ครูบิว";
 if(window.supabaseApi&&window.supabaseApi.enabled){
   let refreshTimer;
   window.supabaseApi.subscribe(()=>{
