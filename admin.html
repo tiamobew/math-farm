@@ -4,16 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ฟาร์มคณิต — หน้าจัดการระบบ (แอดมิน)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{--bg1:#0f1830;--card:#182545;--line:#2a3d6b;--ink:#eaf1ff;--muted:#9fb2d8;
-    --accent:#5ef2c6;--c:#4a90ff;--cd:#2f6fdc;--good:#37c26b;--warn:#ffcf4d;--bad:#ff6b6b}
+    --accent:#5ef2c6;--c:#4a90ff;--cd:#2f6fdc;--good:#37c26b;--warn:#ffcf4d;--bad:#ff6b6b;
+    --font-body:"Noto Sans Thai","Segoe UI",Tahoma,sans-serif;
+    --font-friendly:"Mali","Noto Sans Thai","Segoe UI",sans-serif}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:"TH Sarabun New","Sarabun","Segoe UI",Tahoma,sans-serif;
+  body{font-family:var(--font-body);
     background:radial-gradient(1200px 600px at 70% -10%,#24356b 0%,var(--bg1) 55%);color:var(--ink);
     min-height:100vh;min-height:100dvh;font-size:18px;-webkit-text-size-adjust:100%;overflow-x:hidden}
   .wrap{max-width:1080px;margin:0 auto;padding:18px}
-  h1,h2,h3{font-weight:800} .muted{color:var(--muted)} .accent{color:var(--accent)}
-  button{font-family:inherit;cursor:pointer;border:none;font-size:17px;touch-action:manipulation;
+  h1,h2,h3{font-family:var(--font-friendly);font-weight:700;line-height:1.35;letter-spacing:.01em} .muted{color:var(--muted)} .accent{color:var(--accent)}
+  button{font-family:var(--font-friendly);cursor:pointer;border:none;font-size:17px;touch-action:manipulation;
     -webkit-tap-highlight-color:transparent}
   .btn{background:linear-gradient(var(--c),var(--cd));color:#fff;font-weight:800;padding:10px 20px;
     border-radius:10px;box-shadow:0 5px 14px rgba(0,0,0,.3)}

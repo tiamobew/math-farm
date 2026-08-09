@@ -4,16 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ฟาร์มคณิต — ระบบสะสมแต้มการเรียน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --c:#4a90ff; --cd:#2f6fdc;              /* character color (changeable) */
     --bg1:#0f1830; --bg2:#1a2850; --card:#182545;
     --line:#2a3d6b; --ink:#eaf1ff; --muted:#9fb2d8; --accent:#5ef2c6;
     --good:#37c26b; --warn:#ffcf4d; --bad:#ff6b6b;
+    --font-body:"Noto Sans Thai","Segoe UI",Tahoma,sans-serif;
+    --font-friendly:"Mali","Noto Sans Thai","Segoe UI",sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
-    font-family:"TH Sarabun New","Sarabun","Segoe UI",Tahoma,sans-serif;
+    font-family:var(--font-body);
     background:radial-gradient(1200px 600px at 70% -10%,#24356b 0%,var(--bg1) 55%);
     color:var(--ink); min-height:100vh; min-height:100dvh; font-size:19px;
     -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overflow-x:hidden;
@@ -21,10 +26,10 @@
   .wrap{max-width:960px;margin:0 auto;padding:18px}
   .screen{display:none} .screen.active{display:block;animation:fade .3s}
   @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
-  h1,h2,h3{font-weight:800;line-height:1.2}
+  h1,h2,h3{font-family:var(--font-friendly);font-weight:700;line-height:1.35;letter-spacing:.01em}
   .accent{color:var(--accent)}
   .muted{color:var(--muted)}
-  button{font-family:inherit;cursor:pointer;border:none;font-size:19px;touch-action:manipulation;
+  button{font-family:var(--font-friendly);cursor:pointer;border:none;font-size:19px;touch-action:manipulation;
     -webkit-tap-highlight-color:transparent}
   .btn{background:linear-gradient(var(--c),var(--cd));color:#fff;font-weight:800;
     padding:12px 26px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.3);transition:transform .08s}
