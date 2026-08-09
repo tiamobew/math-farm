@@ -251,19 +251,160 @@
     .hudHint{bottom:max(3px,env(safe-area-inset-bottom));padding:3px 8px;font-size:11px}
     .rotateTip{display:none}
   }
+
+  /* ---------- ELEMENTARY GAME THEME ---------- */
+  :root{
+    --bg1:#d9f4ff;--bg2:#f7fcff;--card:rgba(255,255,255,.94);
+    --line:#b8dca2;--ink:#244733;--muted:#607968;--accent:#159a68;
+    --good:#28a965;--warn:#f2a900;--bad:#e45151;
+  }
+  body{
+    background:
+      radial-gradient(circle at 12% 8%,rgba(255,255,255,.95) 0 5%,transparent 5.3%),
+      radial-gradient(circle at 88% 16%,rgba(255,255,255,.8) 0 7%,transparent 7.3%),
+      linear-gradient(180deg,#c9efff 0%,#eaf9ff 54%,#ddf4bd 54%,#c7e99d 100%);
+    background-attachment:fixed;color:var(--ink);
+  }
+  .screen:not(#farmScreen){min-height:100dvh}
+  .wrap{position:relative;z-index:2}
+  .card{
+    background:var(--card);border:2px solid rgba(124,184,93,.45);border-radius:24px;
+    box-shadow:0 12px 0 rgba(77,137,66,.11),0 22px 45px rgba(43,100,83,.14);
+    backdrop-filter:blur(10px);
+  }
+  .muted{color:var(--muted)}
+  .btn{
+    background:linear-gradient(180deg,#53d895,#2eae70);border:2px solid rgba(255,255,255,.55);
+    border-radius:16px;box-shadow:0 6px 0 #1f8254,0 10px 18px rgba(38,127,85,.2);
+    transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;
+  }
+  .btn:hover{transform:translateY(-2px);filter:saturate(1.06);box-shadow:0 8px 0 #1f8254,0 13px 22px rgba(38,127,85,.22)}
+  .btn:active{transform:translateY(4px);box-shadow:0 2px 0 #1f8254,0 5px 10px rgba(38,127,85,.18)}
+  .btn.ghost{background:#fff;border:2px solid #acd68f;color:#315d3f;box-shadow:0 4px 0 #a3ca87}
+  .btn.ghost:hover{box-shadow:0 6px 0 #a3ca87,0 9px 16px rgba(61,111,70,.14)}
+  input,select{
+    background:#fff;color:var(--ink);border:2px solid #b7dca0;border-radius:15px;
+    box-shadow:inset 0 2px 0 rgba(75,130,81,.06);transition:border-color .18s,box-shadow .18s;
+  }
+  input:focus,select:focus{border-color:#3db77c;box-shadow:0 0 0 4px rgba(61,183,124,.16)}
+  label{color:#4e6f5a;font-weight:700}
+  .pill{background:#fff;border:2px solid #b7dca0}
+
+  #authScreen{position:relative;overflow:hidden;isolation:isolate}
+  #authScreen::before{
+    content:"";position:absolute;inset:auto -10% -12% -10%;height:42%;z-index:0;
+    background:radial-gradient(ellipse at top,#a7dd76 0 48%,#77bf5c 49% 64%,#61a94d 65%);
+    border-radius:50% 50% 0 0/28% 28% 0 0;
+  }
+  #authScreen .wrap{
+    max-width:980px;min-height:100dvh;padding:34px 20px 70px;display:grid;
+    grid-template-columns:minmax(280px,1fr) minmax(360px,440px);align-items:center;gap:34px;
+  }
+  #authScreen .brand{margin:0;padding:20px;text-shadow:0 2px 0 rgba(255,255,255,.7)}
+  #authScreen .brand h1{font-size:clamp(40px,6vw,64px);color:#28633e;line-height:1.05}
+  #authScreen .brand h1 b{color:#ee8c24}
+  #authScreen .brand p{max-width:520px;margin:12px auto 0;font-size:19px;font-weight:600}
+  .brandBadge{display:inline-grid;place-items:center;margin-right:8px;animation:sprout 2.8s ease-in-out infinite}
+  .authKicker{display:inline-flex;align-items:center;gap:7px;background:#fff7d6;color:#7c5c0d;
+    border:2px solid #f2d46e;border-radius:999px;padding:7px 14px;font-weight:800;font-size:15px;margin-bottom:10px}
+  .featureChips{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:15px}
+  .featureChips span{background:rgba(255,255,255,.9);border:2px solid rgba(105,171,86,.3);
+    padding:7px 12px;border-radius:999px;color:#376248;font-weight:700;font-size:15px;box-shadow:0 4px 10px rgba(44,100,70,.09)}
+  #authScreen .card{padding:24px 26px;border-color:#a9d98a;animation:cardRise .55s cubic-bezier(.2,.8,.2,1)}
+  .authCardTitle{text-align:center;font-family:var(--font-friendly);font-weight:700;color:#2c6843;font-size:21px}
+  .tabs{background:#edf8e6;border:2px solid #c8e5b6;border-radius:16px;padding:5px;margin:13px 0 17px}
+  .tabs button{color:#5c7563;border-radius:12px}
+  .tabs button.on{background:linear-gradient(180deg,#64dba0,#33b676);color:#fff;box-shadow:0 4px 0 #238555}
+  #authScreen>.wrap>.center{grid-column:1/-1;background:rgba(255,255,255,.86);justify-self:center;
+    padding:7px 15px;border-radius:999px}
+  #authScreen .heroBot svg{animation:botBob 3.2s ease-in-out infinite;filter:drop-shadow(0 16px 18px rgba(37,99,65,.22))}
+  .authDecor{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .authDecor span{position:absolute;display:block;filter:drop-shadow(0 5px 7px rgba(62,115,126,.12))}
+  .cloudOne{top:8%;left:5%;font-size:58px;animation:cloudDrift 11s ease-in-out infinite}
+  .cloudTwo{top:15%;right:4%;font-size:72px;animation:cloudDrift 14s ease-in-out -4s infinite reverse}
+  .sparkOne{top:10%;left:45%;font-size:30px;animation:twinkle 2.4s ease-in-out infinite}
+  .sparkTwo{top:32%;right:8%;font-size:24px;animation:twinkle 2.9s ease-in-out -1s infinite}
+
+  #appScreen::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.48;
+    background:radial-gradient(circle at 8% 20%,#fff 0 3px,transparent 4px),radial-gradient(circle at 92% 35%,#fff 0 4px,transparent 5px)}
+  .top{background:rgba(255,255,255,.94);border:2px solid #acd790;border-radius:22px;
+    box-shadow:0 8px 0 rgba(83,145,70,.13),0 14px 30px rgba(48,99,72,.12)}
+  .top .who .nm,.lvName{color:#2c6843;font-family:var(--font-friendly)}
+  .avatar{background:#eff9e8;border:2px solid #c2e3ac;border-radius:18px}
+  .points{color:#e28a00;text-shadow:0 2px 0 #fff1b8}
+  .lvBar{background:#e7f4dd;border:2px solid #c3dfaf;height:16px}
+  .badge{background:#f7fbf2;border:2px solid #c7e2b4;border-radius:18px;transition:transform .18s}
+  .badge.got{background:#fff8d8;border-color:#f2c751;box-shadow:0 4px 0 #e8c150}
+  .badge.got:hover{transform:translateY(-3px) rotate(-1deg)}
+  .helpItem,.lbRow{background:#f5fbf0;border:2px solid #c6e1b4;border-radius:17px}
+  .lbRow.me{background:#e5f8ee;border-color:#48bb82;box-shadow:0 0 0 2px rgba(72,187,130,.12)}
+  .mission{
+    background:#f9fcf6;border:2px solid #c4e0b0;border-radius:20px;padding:17px;
+    box-shadow:0 5px 0 rgba(118,166,91,.16);transition:transform .18s ease,box-shadow .18s ease;
+  }
+  .mission:nth-child(3n+1){background:#effaff;border-color:#acd9eb}
+  .mission:nth-child(3n+2){background:#fff8e6;border-color:#efd28e}
+  .mission:nth-child(3n){background:#f5efff;border-color:#d7c1ed}
+  .mission:hover{transform:translateY(-3px);box-shadow:0 8px 0 rgba(118,166,91,.14)}
+  .mission .ic{background:#fff;border-radius:16px;width:54px;height:54px;display:grid;place-items:center;
+    box-shadow:0 4px 10px rgba(58,100,72,.1);animation:iconWiggle 4.5s ease-in-out infinite}
+  .mission .t{color:#2e5940}.mission .p{color:#d88700}
+  .sw{box-shadow:0 4px 0 rgba(63,99,76,.18)}
+  .robotName{color:#178b5e}
+  .modeTag{background:rgba(255,255,255,.9);color:#397055;border:1px solid #b9daa5;font-weight:700}
+
+  .shopBox{background:#fff;color:var(--ink);border:2px solid #a8d68b;border-radius:24px}
+  .shopCard{background:#f7fbf2;border:2px solid #c7e2b4;border-radius:19px}
+  .ftabs button{background:#eef7e8;border:2px solid #c7e2b4;color:#52715d;border-radius:14px}
+  .qText{color:#238b61}
+  #farmScreen .hudTop .btn.ghost{background:rgba(255,255,255,.92);color:#315d3f;border-color:#a8d18e}
+
+  @keyframes botBob{0%,100%{transform:translateY(0) rotate(-.6deg)}50%{transform:translateY(-9px) rotate(.6deg)}}
+  @keyframes sprout{0%,100%{transform:rotate(-5deg) scale(1)}50%{transform:rotate(7deg) scale(1.08)}}
+  @keyframes cloudDrift{0%,100%{transform:translateX(0)}50%{transform:translateX(24px)}}
+  @keyframes twinkle{0%,100%{transform:scale(.8) rotate(-8deg);opacity:.45}50%{transform:scale(1.15) rotate(8deg);opacity:1}}
+  @keyframes cardRise{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes iconWiggle{0%,88%,100%{transform:rotate(0)}92%{transform:rotate(-7deg)}96%{transform:rotate(7deg)}}
+
+  @media(max-width:760px){
+    #authScreen .wrap{display:flex;flex-direction:column;justify-content:center;gap:5px;padding:12px 10px 64px}
+    #authScreen .brand{padding:2px 8px 8px}
+    #authScreen .brand h1{font-size:36px}
+    #authScreen .brand p{font-size:16px;margin-top:7px}
+    .authKicker{font-size:13px;padding:5px 10px;margin-bottom:4px}
+    .featureChips{margin-top:9px}.featureChips span{font-size:13px;padding:5px 9px}
+    #authScreen .card{width:100%;padding:18px 16px;border-radius:21px}
+    #authScreen>.wrap>.center{grid-column:auto;font-size:13px!important;margin-top:9px!important}
+    .cloudOne{font-size:40px;top:4%;left:-2%}.cloudTwo{font-size:48px;top:18%;right:-8%}
+    .sparkOne{left:75%;top:5%}.sparkTwo{display:none}
+    .mission{align-items:center}.mission .ic{width:48px;height:48px;font-size:29px}
+    .topActions .btn{white-space:normal;line-height:1.2}
+    .modeTag{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+      scroll-behavior:auto!important;transition-duration:.01ms!important}
+  }
 </style>
 </head>
 <body>
 
 <!-- =================== AUTH =================== -->
 <section id="authScreen" class="screen active">
+  <div class="authDecor" aria-hidden="true">
+    <span class="cloudOne">☁️</span><span class="cloudTwo">☁️</span>
+    <span class="sparkOne">⭐</span><span class="sparkTwo">✨</span>
+  </div>
   <div class="wrap">
     <div class="brand">
+      <div class="authKicker">🎮 เกมฝึกคิดสำหรับเด็กประถม</div>
       <div class="heroBot" style="--c:#4a90ff;--cd:#2f6fdc"><div id="authBot"></div></div>
-      <h1>ฟาร์ม<b>คณิต</b></h1>
-      <p class="muted">ระบบสะสมแต้มการเรียน — สมัคร เข้าเรียน ทำภารกิจ สะสมแต้ม!</p>
+      <h1><span class="brandBadge">🌱</span>ฟาร์ม<b>คณิต</b></h1>
+      <p class="muted">เรียนรู้ผ่านภารกิจ ตอบโจทย์ เก็บเหรียญ แล้วสร้างฟาร์มในฝันของเรา!</p>
+      <div class="featureChips"><span>🧠 ฝึกคิด</span><span>🪙 เก็บเหรียญ</span><span>🌳 สร้างฟาร์ม</span></div>
     </div>
     <div class="card">
+      <div class="authCardTitle">🌟 เริ่มการผจญภัยวันนี้</div>
       <div class="tabs">
         <button id="tabLogin" class="on" onclick="switchTab('login')">เข้าสู่ระบบ</button>
         <button id="tabReg" onclick="switchTab('reg')">สมัครสมาชิก</button>
