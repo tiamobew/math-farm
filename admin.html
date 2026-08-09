@@ -124,11 +124,13 @@
     <div class="logo">🛠️</div>
     <h1>หน้าจัดการระบบ (Admin)</h1>
     <p class="muted">ฟาร์มคณิต — สำหรับคุณครู/ผู้ดูแล</p>
-    <label style="text-align:left;margin-top:16px">รหัส PIN แอดมิน</label>
-    <input id="pin" type="password" onkeydown="if(event.key==='Enter')adminLogin()">
+    <label style="text-align:left;margin-top:16px">อีเมลแอดมิน</label>
+    <input id="adminEmail" type="email" autocomplete="username" placeholder="name@example.com">
+    <label style="text-align:left;margin-top:10px">รหัสผ่าน</label>
+    <input id="adminPassword" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()">
     <div id="loginMsg" class="msg err"></div>
     <button class="btn" style="width:100%;margin-top:10px" onclick="adminLogin()">เข้าสู่ระบบ</button>
-    <p class="muted" style="margin-top:14px;font-size:14px">รุ่น GitHub Pages จัดการข้อมูลที่บันทึกอยู่ในเบราว์เซอร์เครื่องนี้</p>
+    <p class="muted" style="margin-top:14px;font-size:14px">ข้อมูลโจทย์และผู้เล่นบันทึกออนไลน์ใน Supabase</p>
     <p style="margin-top:6px"><a href="./index.html" class="accent" style="font-size:14px">← กลับหน้าผู้เรียน</a></p>
   </div>
 </section>
@@ -318,6 +320,9 @@
 
 <div class="modeTag" id="modeTag"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-config.js"></script>
+<script src="./supabase-api.js"></script>
 <script>
 /* ====== CONFIG (ให้ตรงกับ index.html) ====== */
 const CONFIG = { GAS_URL: "" }; // GitHub Pages: ใช้ localStorage ร่วมกับ index.html
@@ -360,6 +365,8 @@ function callAppsScript(action,payload){
   });
 }
 async function api(action, payload={}){
+  if(window.supabaseApi && window.supabaseApi.enabled)
+    return await window.supabaseApi.call(action,payload);
   const request={action,pin:PIN,...payload};
   if(window.google && google.script && google.script.run)
     return await callAppsScript(action,request);
@@ -446,13 +453,15 @@ function offlineAdmin(action,p){
 
 /* ====== login ====== */
 async function adminLogin(){
-  const pin=document.getElementById("pin").value.trim();
-  const r=await api("adminAuth",{pin});
-  if(r.ok){ PIN=pin; document.getElementById("loginScreen").classList.remove("active");
+  const email=document.getElementById("adminEmail").value.trim();
+  const password=document.getElementById("adminPassword").value;
+  const r=await api("adminAuth",{email,password});
+  if(r.ok){ PIN="supabase"; document.getElementById("loginScreen").classList.remove("active");
     document.getElementById("dashScreen").classList.add("active"); refreshAll(); }
-  else document.getElementById("loginMsg").textContent=r.error||"PIN ไม่ถูกต้อง";
+  else document.getElementById("loginMsg").textContent=r.error||"เข้าสู่ระบบไม่สำเร็จ";
 }
-function adminLogout(){ PIN=""; document.getElementById("pin").value="";
+function adminLogout(){ PIN=""; document.getElementById("adminPassword").value="";
+  if(window.supabaseApi) window.supabaseApi.signOut();
   document.getElementById("dashScreen").classList.remove("active");
   document.getElementById("loginScreen").classList.add("active"); }
 
@@ -773,7 +782,16 @@ function safePhotoUrl(s){
   const u=String(s||"");
   return /^https:\/\/drive\.google\.com\/thumbnail\?id=[A-Za-z0-9_-]+(?:&sz=w\d+)?$/.test(u) ? esc(u) : "";
 }
-document.getElementById("modeTag").textContent=CONFIG.GAS_URL?"โหมด: เชื่อมต่อ Google Sheets":"GitHub Pages · ข้อมูลในเครื่อง";
+document.getElementById("modeTag").textContent=window.supabaseApi&&window.supabaseApi.enabled
+  ? "Supabase · ข้อมูลออนไลน์"
+  : (CONFIG.GAS_URL?"โหมด: เชื่อมต่อ Google Sheets":"ยังไม่ได้เชื่อม Supabase");
+if(window.supabaseApi&&window.supabaseApi.enabled){
+  let refreshTimer;
+  window.supabaseApi.subscribe(()=>{
+    if(!document.getElementById("dashScreen").classList.contains("active")) return;
+    clearTimeout(refreshTimer); refreshTimer=setTimeout(refreshAll,350);
+  });
+}
 </script>
 </body>
 </html>
