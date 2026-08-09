@@ -4,16 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ฟาร์มคณิต — ระบบสะสมแต้มการเรียน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --c:#4a90ff; --cd:#2f6fdc;              /* character color (changeable) */
     --bg1:#0f1830; --bg2:#1a2850; --card:#182545;
     --line:#2a3d6b; --ink:#eaf1ff; --muted:#9fb2d8; --accent:#5ef2c6;
     --good:#37c26b; --warn:#ffcf4d; --bad:#ff6b6b;
+    --font-body:"Noto Sans Thai","Segoe UI",Tahoma,sans-serif;
+    --font-friendly:"Mali","Noto Sans Thai","Segoe UI",sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
-    font-family:"TH Sarabun New","Sarabun","Segoe UI",Tahoma,sans-serif;
+    font-family:var(--font-body);
     background:radial-gradient(1200px 600px at 70% -10%,#24356b 0%,var(--bg1) 55%);
     color:var(--ink); min-height:100vh; min-height:100dvh; font-size:19px;
     -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overflow-x:hidden;
@@ -21,10 +26,10 @@
   .wrap{max-width:960px;margin:0 auto;padding:18px}
   .screen{display:none} .screen.active{display:block;animation:fade .3s}
   @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
-  h1,h2,h3{font-weight:800;line-height:1.2}
+  h1,h2,h3{font-family:var(--font-friendly);font-weight:700;line-height:1.35;letter-spacing:.01em}
   .accent{color:var(--accent)}
   .muted{color:var(--muted)}
-  button{font-family:inherit;cursor:pointer;border:none;font-size:19px;touch-action:manipulation;
+  button{font-family:var(--font-friendly);cursor:pointer;border:none;font-size:19px;touch-action:manipulation;
     -webkit-tap-highlight-color:transparent}
   .btn{background:linear-gradient(var(--c),var(--cd));color:#fff;font-weight:800;
     padding:12px 26px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.3);transition:transform .08s}
@@ -265,7 +270,7 @@
       </div>
 
       <div id="loginForm" class="form on">
-        <label>Username</label><input id="li_user" autocomplete="username">
+        <label>อีเมล</label><input id="li_user" type="email" autocomplete="username" placeholder="name@example.com">
         <label>รหัสผ่าน</label><input id="li_pass" type="password" autocomplete="current-password">
         <div id="loginMsg" class="msg"></div>
         <button class="btn" style="width:100%;margin-top:6px" onclick="doLogin()">เข้าสู่ระบบ ▶</button>
@@ -277,6 +282,7 @@
           <div style="flex:2"><label>ชั้น/ห้อง</label><input id="rg_cls" placeholder="ป.6/2"></div>
           <div style="flex:1"><label>เลขที่</label><input id="rg_no" inputmode="numeric" placeholder="15"></div>
         </div>
+        <label>อีเมล</label><input id="rg_email" type="email" autocomplete="email" placeholder="name@example.com">
         <label>ตั้ง Username</label><input id="rg_user" autocomplete="username" placeholder="ภาษาอังกฤษ/ตัวเลข">
         <label>ตั้งรหัสผ่าน</label><input id="rg_pass" type="password" autocomplete="new-password">
         <label>รหัสสมัครจากครู</label><input id="rg_code" type="password" autocomplete="off">
@@ -479,6 +485,9 @@
 
 <div class="modeTag" id="modeTag">โหมด: ออฟไลน์ (ทดลอง)</div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-config.js"></script>
+<script src="./supabase-api.js"></script>
 <script>
 /* ======================================================================
    CONFIG — วางลิงก์ Google Apps Script ที่ deploy แล้วตรงนี้เพื่อใช้งานจริง
@@ -670,6 +679,11 @@ function callAppsScript(action,payload){
   });
 }
 async function api(action, payload={}){
+  if(window.supabaseApi && window.supabaseApi.enabled){
+    const data=await window.supabaseApi.call(action,payload);
+    if(data.code==="AUTH_REQUIRED"){ logout(true); setMsg("loginMsg",data.error,"err"); }
+    return data;
+  }
   const token=localStorage.getItem("cb_token")||"";
   const request={action,token,...payload};
   if(window.google && google.script && google.script.run){
@@ -814,18 +828,18 @@ function setMsg(el,text,type){ const e=document.getElementById(el); e.textConten
 
 async function doRegister(){
   const p={fullname:val("rg_name"),cls:val("rg_cls"),no:val("rg_no"),
-    username:val("rg_user"),password:val("rg_pass"),registrationCode:val("rg_code")};
-  if(!p.fullname||!p.username||!p.password||!p.registrationCode)
+    email:val("rg_email"),username:val("rg_user"),password:val("rg_pass"),registrationCode:val("rg_code")};
+  if(!p.fullname||!p.email||!p.username||!p.password||!p.registrationCode)
     return setMsg("regMsg","กรุณากรอกข้อมูลและรหัสสมัครจากครูให้ครบ","err");
   setMsg("regMsg","กำลังสมัคร...","");
   const r=await api("register",p);
   if(r.ok){ setMsg("regMsg","สมัครสำเร็จ! เข้าสู่ระบบได้เลย","ok");
-    switchTab("login"); document.getElementById("li_user").value=p.username; }
+    switchTab("login"); document.getElementById("li_user").value=p.email; }
   else setMsg("regMsg",r.error||"สมัครไม่สำเร็จ","err");
 }
 async function doLogin(){
-  const p={username:val("li_user"),password:val("li_pass")};
-  if(!p.username||!p.password) return setMsg("loginMsg","กรอก username และรหัสผ่าน","err");
+  const p={email:val("li_user"),username:val("li_user"),password:val("li_pass")};
+  if(!p.email||!p.password) return setMsg("loginMsg","กรอกอีเมลและรหัสผ่าน","err");
   setMsg("loginMsg","กำลังเข้าสู่ระบบ...","");
   const r=await api("login",p);
   if(r.ok){ ME=r.user; localStorage.setItem("cb_session",ME.username);
@@ -839,6 +853,7 @@ function logout(force=false){
     !confirm("ยังไม่ได้บันทึกฟาร์ม หากออกตอนนี้ระบบจะใช้ตำแหน่งที่บันทึกเดิม ต้องการออกโดยไม่บันทึกหรือไม่?")) return;
   customizeDirty=false; customizeOriginal=null;
   farmDirty=false; savedFarmState=null;
+  if(window.supabaseApi) window.supabaseApi.signOut();
   ME=null; localStorage.removeItem("cb_session"); localStorage.removeItem("cb_token"); Sound.stopBGM();
   document.getElementById("li_pass").value=""; showScreen("authScreen"); }
 
@@ -1412,7 +1427,14 @@ function toast(t,dur,bg,fg){ const d=document.createElement("div"); d.textConten
 
 /* ----- boot ----- */
 document.getElementById("authBot").innerHTML=robotSVG();
-document.getElementById("modeTag").textContent = CONFIG.GAS_URL ? "โหมด: เชื่อมต่อ Google Sheets" : "GitHub Pages · บันทึกในเครื่อง";
+document.getElementById("modeTag").textContent = window.supabaseApi&&window.supabaseApi.enabled
+  ? "Supabase · บันทึกออนไลน์ทุกอุปกรณ์"
+  : (CONFIG.GAS_URL ? "โหมด: เชื่อมต่อ Google Sheets" : "ยังไม่ได้เชื่อม Supabase · บันทึกในเครื่อง");
+if(window.supabaseApi&&window.supabaseApi.enabled){
+  window.supabaseApi.subscribe(()=>{
+    if(ME) loadMissions();
+  });
+}
 addEventListener("pointerdown",()=>Sound.resume(),{passive:true});   // ปลดล็อกเสียงเมื่อมีการแตะครั้งแรก
 addEventListener("beforeunload",e=>{
   if(!customizeDirty && !farmDirty) return;

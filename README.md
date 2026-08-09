@@ -2,23 +2,20 @@
 
 รุ่นนี้เปิดเล่นได้จากเว็บแบบไฟล์สแตติก เหมาะสำหรับเผยแพร่ด้วย GitHub Pages
 
-## รหัสที่ใช้
+## การบันทึกข้อมูลออนไลน์
 
-- รหัสสมัครผู้เรียน: `1234`
-- รหัส Admin: `044441300`
-- หน้า Admin: `admin.html`
+โปรเจกต์เตรียมเชื่อมกับ Supabase project `mifxyolxisssbtqmoacm` แล้ว ข้อมูลผู้เล่น คะแนน เหรียญ ฟาร์ม โจทย์ ภารกิจ ร้านค้า และประวัติภารกิจจะอยู่ใน PostgreSQL และอัปเดตข้ามอุปกรณ์ผ่าน Realtime
 
-## การบันทึกข้อมูล
+1. คัดลอก Publishable key จาก Supabase Dashboard > Connect ไปใส่ใน `supabase-config.js`
+2. ล็อกอิน Supabase CLI แล้วรัน `npm run supabase -- link --project-ref mifxyolxisssbtqmoacm`
+3. รัน `npm run supabase -- db push` เพื่อลง migration ใน `supabase/migrations`
+4. Deploy Edge Function `register-student` เพื่อให้บัญชีนักเรียนถูกยืนยันอัตโนมัติและไม่ส่งอีเมลยืนยัน (`npm run supabase -- functions deploy register-student --no-verify-jwt`)
 
-ข้อมูลผู้เล่น ฟาร์ม ราคา และภารกิจเก็บด้วย `localStorage` ของเบราว์เซอร์
-ผู้เล่นต้องกด **บันทึกฟาร์ม** ก่อนออกทุกครั้ง
+หน้า Admin อยู่ที่ `admin.html` และใช้ Supabase Auth แทน PIN ที่ฝังในหน้าเว็บ บัญชี `tiamobew@gmail.com` จะได้รับบทบาท admin จาก migration
 
-ข้อควรทราบ:
+หน้าเว็บใช้เฉพาะ Publishable key ซึ่งเปิดเผยใน browser ได้ตามการออกแบบของ Supabase ห้ามใส่ Secret key หรือ `service_role` ลงในไฟล์หน้าเว็บ
 
-- ข้อมูลอยู่เฉพาะเบราว์เซอร์และอุปกรณ์ที่ใช้งาน
-- การล้างข้อมูลเว็บไซต์หรือล้างประวัติเบราว์เซอร์อาจทำให้ข้อมูลหาย
-- รุ่นนี้ไม่แชร์ข้อมูลระหว่างหลายเครื่อง
-- หากต้องการข้อมูลรวมใน Google Sheets ให้ใช้ลิงก์ Google Apps Script รุ่นหลัก
+หากยังไม่ได้ใส่ Publishable key เกมจะถอยกลับไปใช้ `localStorage` ชั่วคราว แต่ข้อมูลจะยังไม่ข้ามอุปกรณ์
 
 ## เปิด GitHub Pages
 
