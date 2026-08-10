@@ -40,6 +40,7 @@ Deno.serve(async (request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    let effectiveRegistrationCode = registrationCode;
     if (adminCreate) {
       const authHeader = request.headers.get("Authorization") || "";
       const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
@@ -56,19 +57,25 @@ Deno.serve(async (request) => {
       if (profileError || profile?.role !== "admin") {
         throw new RequestError("บัญชีนี้ไม่มีสิทธิ์เพิ่มนักเรียน", 403);
       }
+
+      const { data: serviceRegistrationCode, error: codeError } = await admin
+        .rpc("internal_registration_code_for_service_role");
+      if (codeError || !serviceRegistrationCode) {
+        throw new RequestError("ไม่สามารถเตรียมบัญชีนักเรียนได้", 500);
+      }
+      effectiveRegistrationCode = String(serviceRegistrationCode);
     }
 
     const { data, error } = await admin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      app_metadata: adminCreate ? { math_farm_admin_created: true } : {},
       user_metadata: {
         username,
         full_name: String(body.fullname || "").trim(),
         class_name: String(body.cls || "").trim(),
         student_no: String(body.no || "").trim(),
-        registration_code: registrationCode,
+        registration_code: effectiveRegistrationCode,
       },
     });
     if (error) throw error;
