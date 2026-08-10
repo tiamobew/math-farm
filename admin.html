@@ -512,7 +512,7 @@ function renderEvidence(){
   const cap=list.length>120; if(cap) list=list.slice(0,120);
   document.getElementById("evidenceGrid").innerHTML=list.map(l=>`
     <div class="evCard">
-      <img src="${safePhotoUrl(l.photo)}" loading="lazy">
+      <img src="${safePhotoUrl(l.photo)}" loading="lazy" alt="ภาพหลักฐานกิจกรรม" onclick="showLightbox(this.src)">
       <div class="evInfo"><b>${esc(uName(l.username))}</b>
         <span>${esc(mName(l.missionId))}</span>
         <div class="evMeta">${esc(l.date||"")} · +${l.points} แต้ม</div></div>
@@ -808,6 +808,7 @@ function jsArg(s){ return JSON.stringify(String(s??"")).replace(/'/g,"\\u0027").
 function validColor(s){ return /^#[0-9a-f]{6}$/i.test(String(s||"")) ? s : "#4a90ff"; }
 function safePhotoUrl(s){
   const u=String(s||"");
+  if(/^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/.test(u)) return u;
   return /^https:\/\/drive\.google\.com\/thumbnail\?id=[A-Za-z0-9_-]+(?:&sz=w\d+)?$/.test(u) ? esc(u) : "";
 }
 document.getElementById("modeTag").textContent="Dev Create By ครูบิว";
