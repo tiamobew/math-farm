@@ -117,6 +117,25 @@
           const rows = unwrap(await client.from("profiles").select("*").eq("role", "student").order("created_at"));
           return ok({ users: (rows || []).map(mapProfile) });
         }
+        case "adminCreateStudent": {
+          await requireAdmin();
+          const { data, error } = await client.functions.invoke("register-student", { body: {
+            adminCreate: true,
+            email: String(p.email || "").trim().toLowerCase(),
+            password: p.password,
+            username: String(p.username || "").trim(),
+            fullname: String(p.fullname || "").trim(),
+            cls: String(p.cls || "").trim(),
+            no: String(p.no || "").trim()
+          } });
+          if (error) {
+            let message = error.message;
+            try { message = (await error.context.json()).error || message; } catch (_) {}
+            throw new Error(message);
+          }
+          if (!data?.ok) throw new Error(data?.error || "เพิ่มนักเรียนไม่สำเร็จ");
+          return ok({ userId: data.userId });
+        }
         case "adminUpdateUser": {
           await requireAdmin();
           if (p.resetPass) throw new Error("การเปลี่ยนรหัสผ่านผู้เรียนให้ทำจาก Supabase Auth > Users");
