@@ -100,11 +100,14 @@
         case "answerQuestion":
           return ok(unwrap(await client.rpc("submit_answer", { p_question_id: p.questionId, p_answer: p.answer })));
         case "buyPet":
-        case "buyDecor": {
-          const type = action === "buyPet" ? "pets" : "decor";
-          const id = action === "buyPet" ? p.petId : p.decorId;
+        case "buyDecor":
+        case "buyFood": {
+          const type = action === "buyPet" ? "pets" : action === "buyDecor" ? "decor" : "food";
+          const id = action === "buyPet" ? p.petId : action === "buyDecor" ? p.decorId : p.foodId;
           return ok(unwrap(await client.rpc("purchase_item", { p_type: type, p_item_id: id })));
         }
+        case "feedPet":
+          return ok(unwrap(await client.rpc("feed_pet", { p_pet_key: p.petKey, p_accessory: p.accessory })));
         case "completeMission":
           return ok(unwrap(await client.rpc("complete_mission", { p_mission_id: p.missionId, p_photo: p.photo || null })));
         case "adminAuth": {
