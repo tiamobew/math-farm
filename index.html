@@ -155,6 +155,7 @@
     align-items:center;gap:10px;pointer-events:none;z-index:4}
   .hudTop>*{pointer-events:auto}
   .hudGroup{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .compactLabel{display:none}
   #farmScreen .hudTop .btn,#farmScreen .subjectSel,#farmScreen .coinChip{
     border:2px solid rgba(255,255,255,.82);box-shadow:0 5px 0 rgba(43,104,66,.17),0 8px 18px rgba(32,91,104,.16);
     backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)
@@ -225,23 +226,32 @@
     .lbRow{gap:8px;padding:10px}
     .lbRank{width:30px}
 
-    #farmScreen.active{height:100vh;height:100dvh;min-height:0}
-    .islandStage{min-height:0;height:100%;padding-top:112px;padding-bottom:max(6px,env(safe-area-inset-bottom))}
-    #island{width:100%;max-width:none;height:auto}
+    body:has(#farmScreen.active){overflow:hidden;overscroll-behavior:none}
+    #farmScreen.active{position:fixed;inset:0;z-index:50;height:100vh;height:100dvh;min-height:0;background:#9bdcff}
+    .islandStage{min-height:0;height:100%;padding:0;isolation:isolate;background:#9bdcff}
+    .islandStage::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+      background:linear-gradient(180deg,rgba(37,117,163,.14),transparent 18%,transparent 76%,rgba(29,97,56,.12))}
+    #island{position:relative;z-index:0;width:auto;height:100%;max-width:none;min-width:100%;flex:none;
+      transform:translateX(var(--farm-camera-x,0px));transition:transform .12s ease-out;will-change:transform}
     .hudTop{top:max(6px,env(safe-area-inset-top));left:6px;right:6px;display:flex;
-      flex-direction:column;align-items:stretch;gap:5px}
+      flex-direction:column;align-items:stretch;gap:6px;z-index:5}
     .hudGroup{gap:5px;flex-wrap:nowrap}
     .hudGroup:first-child{justify-content:space-between}
-    .hudGroup:last-child{justify-content:flex-end}
+    .hudGroup:last-child{justify-content:flex-end;width:100%}
     .farmBrand{display:none}
-    .hudTop .btn.sm,.subjectSel{min-height:38px;padding:6px 9px;font-size:14px;border-radius:9px}
-    .subjectSel{min-width:0;max-width:175px}
-    .coinChip{padding:5px 9px;font-size:15px}
-    .hudHint{bottom:max(4px,env(safe-area-inset-bottom));padding:4px 8px;border-radius:9px;
-      width:max-content;max-width:calc(100% - 12px);font-size:12px;line-height:1.2}
-    .joy{bottom:max(43px,calc(env(safe-area-inset-bottom) + 38px));left:8px;gap:4px}
-    .jrow{gap:4px}
-    .jb{width:50px;height:50px;border-radius:13px;font-size:21px}
+    .hudTop .btn.sm,.subjectSel{min-height:42px;padding:7px 10px;font-size:14px;border-radius:12px}
+    .hudTop .btn.sm{min-width:44px}
+    .subjectSel{min-width:0;max-width:210px;flex:1}
+    .coinChip{padding:6px 10px;font-size:15px;margin-right:auto}
+    .wideLabel{display:none}.compactLabel{display:inline}
+    .hudHint{bottom:max(5px,env(safe-area-inset-bottom));padding:5px 10px;border-radius:10px;
+      width:calc(100% - 12px);max-width:none;font-size:11px;line-height:1.25;z-index:5}
+    .joy{z-index:5;bottom:max(54px,calc(env(safe-area-inset-bottom) + 49px));left:12px;gap:5px;opacity:1}
+    .jrow{gap:5px}
+    .jb{width:56px;height:56px;border:2px solid rgba(255,255,255,.82);border-radius:16px;font-size:23px;
+      background:rgba(255,255,255,.82);box-shadow:0 5px 0 rgba(41,91,66,.22),0 8px 18px rgba(33,84,62,.18);backdrop-filter:blur(8px)}
+    .jb:active{transform:translateY(3px) scale(.96);box-shadow:0 2px 0 rgba(41,91,66,.22)}
+    .jchop{background:linear-gradient(#ffe06a,#ffad39)}
     .shopOverlay{padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom))}
     .shopBox{padding:14px;border-radius:14px;max-height:calc(100dvh - 16px)}
     .shopGrid{gap:8px}
@@ -259,13 +269,11 @@
     .shopGrid{grid-template-columns:1fr}
   }
   @media(max-width:759px) and (orientation:portrait){
-    .rotateTip{display:block;position:absolute;right:8px;bottom:max(48px,calc(env(safe-area-inset-bottom) + 43px));
-      max-width:155px;background:rgba(5,10,25,.72);color:#fff;padding:6px 9px;border-radius:10px;
-      font-size:12px;line-height:1.2;text-align:center;pointer-events:none}
+    .rotateTip{display:none}
   }
   @media(max-width:759px) and (orientation:landscape){
-    .islandStage{padding-top:82px}
-    #island{width:auto;height:100%;max-height:100%;aspect-ratio:3/2}
+    .islandStage{padding:0}
+    #island{width:auto;height:100%;max-height:none;min-width:0;aspect-ratio:3/2}
     .hudTop{flex-direction:row;align-items:flex-start}
     .hudGroup:last-child{flex-wrap:wrap}
     .rotateTip{display:none}
@@ -273,13 +281,13 @@
   /* โทรศัพท์แนวนอนบางรุ่นมีความกว้างเกิน 760px แต่ความสูงยังน้อย */
   @media(max-height:520px) and (orientation:landscape){
     #farmScreen.active{height:100vh;height:100dvh;min-height:0}
-    .islandStage{min-height:0;height:100%;padding-top:72px}
-    #island{width:auto;height:100%;max-width:none;max-height:100%;aspect-ratio:3/2}
+    .islandStage{min-height:0;height:100%;padding:0}
+    #island{width:auto;height:100%;max-width:none;max-height:none;min-width:0;aspect-ratio:3/2}
     .hudTop{top:max(4px,env(safe-area-inset-top));left:6px;right:6px;align-items:flex-start;gap:5px}
     .hudGroup{gap:5px}
     .hudTop .btn.sm,.subjectSel{min-height:36px;padding:5px 8px;font-size:13px}
     .coinChip{padding:4px 8px;font-size:14px}
-    .joy{display:flex;left:max(8px,env(safe-area-inset-left));bottom:max(34px,calc(env(safe-area-inset-bottom) + 30px));gap:3px}
+    .joy{display:flex;left:max(8px,env(safe-area-inset-left));bottom:max(39px,calc(env(safe-area-inset-bottom) + 34px));gap:3px}
     .jrow{gap:3px}
     .jb{width:44px;height:44px;border-radius:12px;font-size:19px}
     .hudHint{bottom:max(3px,env(safe-area-inset-bottom));padding:3px 8px;font-size:11px}
@@ -580,12 +588,12 @@
       </div>
       <div class="hudGroup">
         <span class="coinChip">🪙 <span id="coinCount">0</span></span>
-        <button class="btn ghost sm" id="saveFarmBtn" onclick="saveFarmState()">💾 บันทึกฟาร์ม</button>
+        <button class="btn ghost sm" id="saveFarmBtn" onclick="saveFarmState()" aria-label="บันทึกฟาร์ม"><span class="wideLabel">💾 บันทึกฟาร์ม</span><span class="compactLabel">💾</span></button>
         <button class="btn ghost sm" id="muteBtn2" onclick="toggleSound()" title="เปิด/ปิดเสียง">🔊</button>
-        <button class="btn sm" onclick="openShop()">🛒 ร้านสัตว์</button>
+        <button class="btn sm" onclick="openShop()" aria-label="เปิดร้านสัตว์"><span class="wideLabel">🛒 ร้านสัตว์</span><span class="compactLabel">🛒</span></button>
       </div>
     </div>
-    <div class="hudHint">🕹️ ใช้ปุ่มลูกศร/WASD เดิน • หรือแตะพื้นเพื่อเดินไป • เดินชนต้นไม้แล้วกด <b>Space</b> เพื่อตัด</div>
+    <div class="hudHint"><span class="wideLabel">🕹️ ใช้ปุ่มลูกศร/WASD เดิน • หรือแตะพื้นเพื่อเดินไป • เดินชนต้นไม้แล้วกด <b>Space</b> เพื่อตัด</span><span class="compactLabel">👆 แตะพื้นเพื่อเดิน • เข้าใกล้ต้นไม้แล้วกด 🪓</span></div>
     <div class="rotateTip">📱 หมุนโทรศัพท์แนวนอน จะเห็นฟาร์มกว้างและเล่นสะดวกขึ้น</div>
     <div class="joy" id="joy">
       <button class="jb" data-k="ArrowUp">▲</button>
@@ -1360,7 +1368,9 @@ function farmSnapshot(){
 function markFarmDirty(){ if(!farmActive)return; farmDirty=true; updateFarmSaveButton(); }
 function updateFarmSaveButton(){
   const b=document.getElementById("saveFarmBtn"); if(!b)return;
-  b.textContent=farmDirty?"💾 บันทึกฟาร์ม •":"✅ บันทึกแล้ว";
+  b.setAttribute("aria-label",farmDirty?"บันทึกการเปลี่ยนแปลงฟาร์ม":"ฟาร์มบันทึกแล้ว");
+  b.innerHTML=farmDirty?'<span class="wideLabel">💾 บันทึกฟาร์ม •</span><span class="compactLabel">💾•</span>'
+    :'<span class="wideLabel">✅ บันทึกแล้ว</span><span class="compactLabel">✅</span>';
 }
 async function saveFarmState(){
   if(!player)return;
@@ -1554,6 +1564,17 @@ function drawFarm(){ const c=document.getElementById("island"); if(!c) return; c
   if(player) ents.push({y:player.y,f:()=>drawPlayer(x)});
   ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
   const shade=x.createLinearGradient(0,0,0,H);shade.addColorStop(0,"rgba(15,79,91,.035)");shade.addColorStop(.7,"rgba(11,70,42,0)");shade.addColorStop(1,"rgba(19,78,41,.1)");x.fillStyle=shade;x.fillRect(0,0,W,H);
+  updateFarmCamera(c);
+}
+function updateFarmCamera(c){
+  if(!player||!matchMedia("(max-width:759px) and (orientation:portrait)").matches){c.style.removeProperty("--farm-camera-x");return;}
+  const stage=c.parentElement,renderedWidth=c.offsetWidth,stageWidth=stage.clientWidth;
+  if(renderedWidth<=stageWidth){c.style.setProperty("--farm-camera-x","0px");return;}
+  const overflow=(renderedWidth-stageWidth)/2,scale=renderedWidth/c.width;
+  const basePlayerX=(stageWidth-renderedWidth)/2+player.x*scale;
+  const desired=stageWidth*.53-basePlayerX;
+  const shift=Math.max(-overflow,Math.min(overflow,desired));
+  c.style.setProperty("--farm-camera-x",`${shift.toFixed(1)}px`);
 }
 function drawDecor(x,d){ const s=depth(d.y); x.save(); x.translate(d.x,d.y);
   if(d.type==="house") drawHouse(x,s); else if(d.type==="fence") drawFence(x,s);
