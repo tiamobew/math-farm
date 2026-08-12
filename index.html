@@ -197,6 +197,13 @@
   .shopCard .pp{color:#ffd23e;font-weight:900}
   .shopCard button{margin-top:8px;width:100%}
   .shopCard button:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.5)}
+  .petPreview{min-height:120px;display:grid;place-items:center;background:linear-gradient(180deg,#dff6ff,#eaf8df);
+    border:2px solid #b9dda5;border-radius:18px;margin:12px 0;position:relative;overflow:hidden}
+  .petPreview .petEmoji{font-size:74px;filter:drop-shadow(0 8px 6px rgba(0,0,0,.18))}
+  .petPreview .petWear{position:absolute;font-size:38px;transform:translate(22px,-31px)}
+  .petPreview .petAura{position:absolute;width:92px;height:92px;border:7px solid transparent;border-radius:50%;opacity:.75}
+  .accessoryCard.on{border-color:#ff9d3e;box-shadow:0 0 0 3px rgba(255,157,62,.2)}
+  .foodNote{background:#fff8df;border:1px solid #f0cf68;color:#755300;padding:9px 12px;border-radius:12px;font-weight:800}
   .qText{font-size:34px;font-weight:900;text-align:center;margin:14px 0;color:var(--accent)}
   .rotateTip{display:none}
 
@@ -588,12 +595,13 @@
       </div>
       <div class="hudGroup">
         <span class="coinChip">🪙 <span id="coinCount">0</span></span>
+        <span class="coinChip" title="อาหารสัตว์">🥕 <span id="foodCount">0</span></span>
         <button class="btn ghost sm" id="saveFarmBtn" onclick="saveFarmState()" aria-label="บันทึกฟาร์ม"><span class="wideLabel">💾 บันทึกฟาร์ม</span><span class="compactLabel">💾</span></button>
         <button class="btn ghost sm" id="muteBtn2" onclick="toggleSound()" title="เปิด/ปิดเสียง">🔊</button>
         <button class="btn sm" onclick="openShop()" aria-label="เปิดร้านสัตว์"><span class="wideLabel">🛒 ร้านสัตว์</span><span class="compactLabel">🛒</span></button>
       </div>
     </div>
-    <div class="hudHint"><span class="wideLabel">🕹️ ใช้ปุ่มลูกศร/WASD เดิน • หรือแตะพื้นเพื่อเดินไป • เดินชนต้นไม้แล้วกด <b>Space</b> เพื่อตัด</span><span class="compactLabel">👆 แตะพื้นเพื่อเดิน • เข้าใกล้ต้นไม้แล้วกด 🪓</span></div>
+    <div class="hudHint"><span class="wideLabel">🕹️ ใช้ปุ่มลูกศร/WASD เดิน • แตะสัตว์เพื่อให้อาหารและแต่งตัว • เดินชนต้นไม้แล้วกด <b>Space</b></span><span class="compactLabel">👆 แตะสัตว์เพื่อแต่งตัว • เข้าใกล้ต้นไม้แล้วกด 🪓</span></div>
     <div class="rotateTip">📱 หมุนโทรศัพท์แนวนอน จะเห็นฟาร์มกว้างและเล่นสะดวกขึ้น</div>
     <div class="joy" id="joy">
       <button class="jb" data-k="ArrowUp">▲</button>
@@ -611,15 +619,31 @@
     <div class="shopBox">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>🛒 ร้านสัตว์เลี้ยง</h2>
-        <span class="coinChip">🪙 <span id="coinCount2">0</span></span>
+        <div class="row"><span class="coinChip">🪙 <span id="coinCount2">0</span></span><span class="coinChip">🥕 <span id="foodCount2">0</span></span></div>
       </div>
-      <p class="muted" style="margin:6px 0">ตัดไม้ตอบโจทย์เก็บเหรียญมาซื้อ สัตว์จะเดินเล่น ของตกแต่งจะไปตั้งในทุ่ง!</p>
+      <p class="muted" style="margin:6px 0">ซื้ออาหารแล้วแตะสัตว์ในฟาร์ม เพื่อเพิ่มเครื่องแต่งตัวให้สัตว์ตัวนั้นได้ 1 ชิ้น</p>
       <div class="ftabs" style="margin:6px 0 2px">
         <button id="stab-pets" class="on" onclick="shopTab('pets')">🐾 สัตว์เลี้ยง</button>
+        <button id="stab-food" onclick="shopTab('food')">🥕 อาหารสัตว์</button>
         <button id="stab-decor" onclick="shopTab('decor')">🏠 ของตกแต่ง</button>
       </div>
       <div class="shopGrid" id="shopGrid"></div>
       <button class="btn ghost" style="width:100%;margin-top:14px" onclick="closeShop()">ปิด</button>
+    </div>
+  </div>
+
+  <!-- pet care overlay -->
+  <div class="shopOverlay" id="petCareModal" style="z-index:66">
+    <div class="shopBox" style="max-width:560px">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 id="petCareTitle">🐾 แต่งตัวสัตว์</h2>
+        <span class="coinChip">🥕 <span id="foodCount3">0</span></span>
+      </div>
+      <div class="petPreview" id="petPreview"></div>
+      <p class="foodNote">ให้อาหาร 1 ชิ้น เพื่อใส่หรือเปลี่ยนของตกแต่งเฉพาะสัตว์ตัวนี้</p>
+      <div class="shopGrid" id="accessoryGrid"></div>
+      <div id="petCareMsg" class="msg" style="min-height:22px;font-weight:800"></div>
+      <button class="btn ghost" style="width:100%;margin-top:10px" onclick="closePetCare()">ปิด</button>
     </div>
   </div>
 </section>
@@ -685,7 +709,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./supabase-config.js"></script>
-<script src="./supabase-api.js?v=20260812-question-score"></script>
+<script src="./supabase-api.js?v=20260812-pet-food"></script>
 <script>
 /* ======================================================================
    CONFIG — วางลิงก์ Google Apps Script ที่ deploy แล้วตรงนี้เพื่อใช้งานจริง
@@ -852,6 +876,15 @@ let DECOR=[
   {id:"fountain",name:"น้ำพุ",             emoji:"⛲", price:8000},
   {id:"house",   name:"บ้าน",              emoji:"🏠", price:10000},
 ];
+let FOOD=[
+  {id:"pet_treat",name:"อาหารสัตว์แสนอร่อย",emoji:"🥕",price:150},
+];
+const PET_ACCESSORIES=[
+  {id:"hat",name:"หมวก",emoji:"🎩"},{id:"bow",name:"โบว์",emoji:"🎀"},{id:"bag",name:"กระเป๋า",emoji:"🎒"},
+  {id:"color_pink",name:"สีชมพู",emoji:"🩷",color:"#ff72b6"},
+  {id:"color_blue",name:"สีฟ้า",emoji:"🩵",color:"#45bff5"},
+  {id:"color_gold",name:"สีทอง",emoji:"💛",color:"#ffc928"},
+];
 /* ---------- คลังโจทย์คณิตเริ่มต้น (ครูแก้ได้ในหน้าแอดมิน) ---------- */
 const DEFAULT_QUESTIONS=[
   {id:"q1",question:"7 + 8 = ?",answer:"15",score:1,coins:25,subject:"คณิตศาสตร์"},
@@ -921,8 +954,9 @@ const DB = {
   farmStates(){ return JSON.parse(localStorage.getItem("cb_farm_states")||"{}"); },
   setFarmStates(s){ localStorage.setItem("cb_farm_states",JSON.stringify(s)); },
   shop(){ let s=JSON.parse(localStorage.getItem("cb_shop")||"null");
-    if(!s){s=PETS.map(x=>({...x,type:"pets"})).concat(DECOR.map(x=>({...x,type:"decor"})));
-      localStorage.setItem("cb_shop",JSON.stringify(s));} return s; },
+    if(!s){s=PETS.map(x=>({...x,type:"pets"})).concat(DECOR.map(x=>({...x,type:"decor"})),FOOD.map(x=>({...x,type:"food"})));
+    }else if(!s.some(x=>x.type==="food")){s=s.concat(FOOD.map(x=>({...x,type:"food"})));}
+    localStorage.setItem("cb_shop",JSON.stringify(s)); return s; },
 };
 function hash(s){ let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))>>>0; return "h"+h; }
 function today(){ return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Bangkok"}).format(new Date()); }
@@ -937,7 +971,7 @@ function offlineApi(action,p){
       if(find(p.username)) return {ok:false,error:"มี username นี้แล้ว"};
       const u={username:p.username,pass:hash(p.password),fullname:p.fullname||"",
         cls:p.cls||"",no:p.no||"",color:"#4a90ff",charName:"น้องคณิต",points:0,
-        coins:0,pets:{},decor:{},createdAt:new Date().toISOString()};
+        coins:0,pets:{},decor:{},petFood:0,petStyles:{},createdAt:new Date().toISOString()};
       users.push(u); DB.setUsers(users); return {ok:true};
     }
     case "login":{
@@ -962,7 +996,7 @@ function offlineApi(action,p){
         color:u.color,charName:u.charName,points:u.points||0}))};
     }
     case "getFarm":{ const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
-      return {ok:true,coins:u.coins||0,pets:u.pets||{},decor:u.decor||{},shop:DB.shop(),
+      return {ok:true,coins:u.coins||0,pets:u.pets||{},decor:u.decor||{},petFood:u.petFood||0,petStyles:u.petStyles||{},shop:DB.shop(),
         farmState:DB.farmStates()[u.username]||null}; }
     case "saveFarmState":{
       const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
@@ -990,6 +1024,20 @@ function offlineApi(action,p){
       if((u.coins||0)<pet.price) return {ok:false,error:"เหรียญไม่พอ"};
       u.coins-=pet.price; u.pets=u.pets||{}; u.pets[pet.id]=(u.pets[pet.id]||0)+1; DB.setUsers(users);
       return {ok:true,coins:u.coins,pets:u.pets}; }
+    case "buyFood":{
+      const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
+      const food=FOOD.find(x=>x.id===p.foodId); if(!food) return {ok:false,error:"ไม่พบอาหารสัตว์"};
+      if((u.coins||0)<food.price) return {ok:false,error:"เหรียญไม่พอ"};
+      u.coins-=food.price; u.petFood=(u.petFood||0)+1; DB.setUsers(users);
+      return {ok:true,coins:u.coins,petFood:u.petFood,petStyles:u.petStyles||{}}; }
+    case "feedPet":{
+      const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
+      const m=String(p.petKey||"").match(/^(chicken|duck|fish|pig):(\d+)$/);
+      if(!m || Number(m[2])>=(u.pets?.[m[1]]||0)) return {ok:false,error:"ไม่พบสัตว์ตัวนี้"};
+      if(!PET_ACCESSORIES.some(x=>x.id===p.accessory)) return {ok:false,error:"ของตกแต่งไม่ถูกต้อง"};
+      if((u.petFood||0)<1) return {ok:false,error:"อาหารสัตว์หมดแล้ว"};
+      u.petFood--; u.petStyles=u.petStyles||{}; u.petStyles[p.petKey]=p.accessory; DB.setUsers(users);
+      return {ok:true,petFood:u.petFood,petStyles:u.petStyles,petKey:p.petKey,accessory:p.accessory}; }
     case "completeMission":{
       const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
       const m=DB.missions().find(x=>x.id===p.missionId); if(!m) return {ok:false,error:"ไม่พบภารกิจ"};
@@ -1005,7 +1053,8 @@ function offlineApi(action,p){
   return {ok:false,error:"unknown action"};
 }
 function pub(u){ return {username:u.username,fullname:u.fullname,cls:u.cls,no:u.no,
-  color:u.color,charName:u.charName,points:u.points,coins:u.coins||0,pets:u.pets||{},decor:u.decor||{}}; }
+  color:u.color,charName:u.charName,points:u.points,coins:u.coins||0,pets:u.pets||{},decor:u.decor||{},
+  petFood:u.petFood||0,petStyles:u.petStyles||{}}; }
 
 /* ======================================================================
    UI logic
@@ -1339,11 +1388,12 @@ function spawnTrees(saved){
   trees=spots.slice(0,20).map(pos=>{ const t={x:pos[0],y:pos[1]}; clampField(t);
     return {x:t.x,y:t.y,alive:true,regrow:0,q:null}; });
 }
-function makeAnimal(type){ const fish=type==="fish";
+function makeAnimal(type,key){ const fish=type==="fish";
   const p=fish?ellipsePt(POND.cx,POND.cy,POND.rx-14,POND.ry-9):fieldPt();
-  return {type,emoji:(PETS.find(x=>x.id===type)||{emoji:"🐔"}).emoji,x:p.x,y:p.y,tx:p.x,ty:p.y,
+  return {type,key,emoji:(PETS.find(x=>x.id===type)||{emoji:"🐔"}).emoji,x:p.x,y:p.y,tx:p.x,ty:p.y,
     pause:Math.random()*100,spd:.45+Math.random()*.4,fish,dir:1}; }
-function loadAnimals(){ animals=[]; Object.entries(ME.pets||{}).forEach(([t,n])=>{ for(let i=0;i<(n||0);i++) animals.push(makeAnimal(t)); }); }
+function loadAnimals(){ animals=[]; Object.entries(ME.pets||{}).forEach(([t,n])=>{
+  for(let i=0;i<(n||0);i++) animals.push(makeAnimal(t,`${t}:${i}`)); }); }
 function loadDecor(){ decors=[]; const d=ME.decor||{};
   for(let i=0;i<(d.house||0);i++)    decors.push({type:"house",   x:120+i*180, y:300});
   for(let i=0;i<(d.fountain||0);i++) decors.push({type:"fountain",x:430+i*120, y:300});
@@ -1355,17 +1405,19 @@ async function openFarm(){
   savedFarmState=null;
   const f=await api("getFarm",{username:ME.username}); if(f.ok){
     ME.coins=f.coins; ME.pets=f.pets||{}; ME.decor=f.decor||{};
+    ME.petFood=Number(f.petFood)||0; ME.petStyles=f.petStyles||{};
     savedFarmState=f.farmState||null;
     if(Array.isArray(f.shop) && f.shop.length){
       PETS=f.shop.filter(x=>x.type==="pets");
       DECOR=f.shop.filter(x=>x.type==="decor");
+      FOOD=f.shop.filter(x=>x.type==="food");
     }
   }
   const q=await api("getQuestions"); QUESTIONS=q.questions||[]; qBag=[]; lastQId=null;
   currentSubject=savedFarmState&&typeof savedFarmState.subject==="string"?savedFarmState.subject:"";
   loadQuestionCycles(savedFarmState&&savedFarmState.questionCycles);
   fillSubjects();
-  buildRobot(); updateCoins();
+  buildRobot(); updateCoins(); updateFood();
   const savedPlayer=savedFarmState&&savedFarmState.player?savedFarmState.player:{x:450,y:500};
   player={x:Number(savedPlayer.x)||450,y:Number(savedPlayer.y)||500,tx:null,ty:null,dir:1,pend:-1};
   clampField(player);
@@ -1408,6 +1460,7 @@ async function saveFarmState(){
   toast("บันทึกฟาร์มแล้ว ✔",1500,"#37c26b","#04210f");
 }
 function updateCoins(){ ["coinCount","coinCount2"].forEach(id=>{const e=document.getElementById(id); if(e)e.textContent=ME.coins||0;}); }
+function updateFood(){ ["foodCount","foodCount2","foodCount3"].forEach(id=>{const e=document.getElementById(id); if(e)e.textContent=ME.petFood||0;}); }
 
 /* ---- input ---- */
 function cvPt(clientX,clientY){ const c=document.getElementById("island"),r=c.getBoundingClientRect();
@@ -1416,7 +1469,7 @@ function initFarmInput(){ if(farmInit) return; farmInit=true;
   const c=document.getElementById("island");
   c.addEventListener("pointerdown",e=>{ if(qOpen)return; Sound.resume(); const p=cvPt(e.clientX,e.clientY);
     let ah=-1,ab=32; animals.forEach((a,i)=>{ const d=Math.hypot(a.x-p.x,a.y-(p.y-14)); if(d<ab){ab=d;ah=i;} });
-    if(ah>=0){ Sound.animal(animals[ah].type); return; }
+    if(ah>=0){ Sound.animal(animals[ah].type); openPetCare(ah); return; }
     let hit=-1,best=52; trees.forEach((t,i)=>{ if(!t.alive)return; const d=Math.hypot(t.x-p.x,t.y-p.y); if(d<best){best=d;hit=i;} });
     if(hit>=0){ player.tx=trees[hit].x; player.ty=trees[hit].y+30; player.pend=hit; }
     else { const q={x:p.x,y:p.y}; clampField(q); player.tx=q.x; player.ty=q.y; player.pend=-1; } });
@@ -1486,27 +1539,64 @@ async function submitAnswer(){
 }
 
 /* ---- shop ---- */
-let shopMode="pets";
+let shopMode="pets", selectedAnimalIndex=-1;
 function openShop(){ renderShop(); document.getElementById("shopModal").classList.add("on"); }
 function closeShop(){ document.getElementById("shopModal").classList.remove("on"); }
 function shopTab(m){ shopMode=m;
   document.getElementById("stab-pets").classList.toggle("on",m==="pets");
+  document.getElementById("stab-food").classList.toggle("on",m==="food");
   document.getElementById("stab-decor").classList.toggle("on",m==="decor"); renderShop(); }
-function renderShop(){ updateCoins();
-  const list=shopMode==="pets"?PETS:DECOR, fn=shopMode==="pets"?"buyPet":"buyDecor";
+function renderShop(){ updateCoins(); updateFood();
+  const list=shopMode==="pets"?PETS:shopMode==="food"?FOOD:DECOR;
+  const fn=shopMode==="pets"?"buyPet":shopMode==="food"?"buyFood":"buyDecor";
   document.getElementById("shopGrid").innerHTML=list.map(p=>{ const afford=(ME.coins||0)>=p.price;
     return `<div class="shopCard"><div class="pe">${p.emoji}</div><div class="pn">${p.name}</div>
       <div class="pp">🪙 ${p.price.toLocaleString()}</div>
       <button class="btn sm" ${afford?"":"disabled"} onclick="${fn}('${p.id}')">ซื้อ</button></div>`; }).join("");
 }
 async function buyPet(id){ const r=await api("buyPet",{username:ME.username,petId:id});
-  if(r.ok){ ME.coins=r.coins; ME.pets=r.pets; updateCoins(); renderShop(); animals.push(makeAnimal(id)); Sound.buy(); Sound.animal(id);
+  if(r.ok){ ME.coins=r.coins; ME.pets=r.pets; updateCoins(); renderShop();
+    animals.push(makeAnimal(id,`${id}:${Math.max(0,(ME.pets[id]||1)-1)}`)); Sound.buy(); Sound.animal(id);
     const pet=PETS.find(x=>x.id===id); toast(`ซื้อ${pet.name} ${pet.emoji}!`); }
   else toast(r.error||"ซื้อไม่สำเร็จ",1800,"var(--bad)","#3a0000"); }
 async function buyDecor(id){ const r=await api("buyDecor",{username:ME.username,decorId:id});
   if(r.ok){ ME.coins=r.coins; ME.decor=r.decor; updateCoins(); renderShop(); loadDecor(); Sound.buy();
     const it=DECOR.find(x=>x.id===id); toast(`ซื้อ${it.name} ${it.emoji}!`); }
   else toast(r.error||"ซื้อไม่สำเร็จ",1800,"var(--bad)","#3a0000"); }
+async function buyFood(id){ const r=await api("buyFood",{username:ME.username,foodId:id});
+  if(r.ok){ ME.coins=r.coins; ME.petFood=r.petFood; ME.petStyles=r.petStyles||ME.petStyles||{};
+    updateCoins(); updateFood(); renderShop(); Sound.buy();
+    const food=FOOD.find(x=>x.id===id); toast(`ซื้อ${food.name} ${food.emoji}! แตะสัตว์เพื่อให้อาหาร`,2200); }
+  else toast(r.error||"ซื้ออาหารไม่สำเร็จ",1800,"var(--bad)","#3a0000"); }
+function openPetCare(index){ selectedAnimalIndex=index; renderPetCare(); document.getElementById("petCareModal").classList.add("on"); }
+function closePetCare(){ selectedAnimalIndex=-1; document.getElementById("petCareModal").classList.remove("on"); }
+function openFoodShop(){ closePetCare(); shopTab("food"); openShop(); }
+function renderPetCare(){ const a=animals[selectedAnimalIndex]; if(!a)return closePetCare();
+  const pet=PETS.find(x=>x.id===a.type)||{name:"สัตว์เลี้ยง",emoji:a.emoji};
+  const current=ME.petStyles?.[a.key]||"", item=PET_ACCESSORIES.find(x=>x.id===current);
+  document.getElementById("petCareTitle").textContent=`${pet.emoji} ${pet.name}ตัวที่ ${Number(a.key.split(":")[1])+1}`;
+  const aura=item?.color?`<span class="petAura" style="border-color:${item.color};box-shadow:0 0 24px ${item.color}"></span>`:"";
+  const wear=item&&!item.color?`<span class="petWear">${item.emoji}</span>`:"";
+  document.getElementById("petPreview").innerHTML=`${aura}<span class="petEmoji">${pet.emoji}</span>${wear}`;
+  document.getElementById("accessoryGrid").innerHTML=PET_ACCESSORIES.map(it=>`
+    <div class="shopCard accessoryCard ${it.id===current?"on":""}">
+      <div class="pe">${it.emoji}</div><div class="pn">${it.name}</div>
+      <button class="btn sm" ${(ME.petFood||0)>0?"":"disabled"} onclick="feedSelectedPet('${it.id}')">
+        ${it.id===current?"ใส่อยู่ · เปลี่ยนใหม่":"🥕 ให้อาหารและใส่"}</button>
+    </div>`).join("");
+  document.getElementById("petCareMsg").innerHTML=(ME.petFood||0)>0
+    ?`มีอาหาร <b>${ME.petFood}</b> ชิ้น · การเลือกแต่ละครั้งใช้อาหาร 1 ชิ้น`
+    :`อาหารหมดแล้ว <button class="btn sm" onclick="openFoodShop()">ไปซื้ออาหาร 🥕</button>`;
+  updateFood();
+}
+async function feedSelectedPet(accessory){ const a=animals[selectedAnimalIndex]; if(!a)return;
+  const current=ME.petStyles?.[a.key];
+  if(current && current!==accessory && !confirm("เปลี่ยนของตกแต่งเดิมของสัตว์ตัวนี้? จะใช้อาหาร 1 ชิ้น")) return;
+  const r=await api("feedPet",{username:ME.username,petKey:a.key,accessory});
+  if(!r.ok){ document.getElementById("petCareMsg").textContent=r.error||"ให้อาหารไม่สำเร็จ"; return; }
+  ME.petFood=r.petFood; ME.petStyles=r.petStyles||{}; Sound.buy(); Sound.animal(a.type); renderPetCare();
+  const item=PET_ACCESSORIES.find(x=>x.id===accessory); toast(`${a.emoji} ได้${item.name}แล้ว! ${item.emoji}`,1900,"#ff9d3e","#351600");
+}
 
 /* ---- render loop ---- */
 let animalTimer=240;
@@ -1676,9 +1766,15 @@ function drawTree(x,t,hi){ const s=depth(t.y), tx=t.x, ty=t.y;
     x.fillText("🪓",tx+R+8*s,fy-Math.sin(farmT/6)*3); } }
 function drawAnimal(x,a){ const s=depth(a.y), mv=a.pause<=0;
   x.save(); x.translate(a.x,a.y); x.scale(s,s); if(a.dir<0)x.scale(-1,1);
+  const accessory=PET_ACCESSORIES.find(it=>it.id===(ME.petStyles?.[a.key]||""));
+  if(accessory?.color){ x.save(); x.strokeStyle=accessory.color; x.globalAlpha=.75; x.lineWidth=5;
+    el(x,0,a.fish?-4:-17,a.fish?23:28,a.fish?15:25); x.stroke(); x.restore(); }
   if(a.type==="fish"){ drawFish(x); }
   else { x.fillStyle="rgba(0,0,0,.18)"; el(x,0,0,16,5); x.fill();
     if(a.type==="duck") drawDuck(x,mv); else if(a.type==="pig") drawPig(x,mv); else drawChicken(x,mv); }
+  if(accessory && !accessory.color){ x.font="22px 'Segoe UI Emoji','Apple Color Emoji',sans-serif"; x.textAlign="center"; x.textBaseline="middle";
+    const pos=accessory.id==="hat"?[a.fish?4:10,a.fish?-17:-40]:accessory.id==="bow"?[a.fish?8:12,a.fish?4:-16]:[-10,a.fish?-4:-15];
+    x.fillText(accessory.emoji,pos[0],pos[1]); }
   x.restore(); }
 function drawChicken(x,mv){ const b=mv?Math.sin(farmT*.35):0; x.save(); x.translate(0,b);
   x.strokeStyle="#ef9b2e"; x.lineWidth=2.2; x.beginPath(); x.moveTo(-2,-6);x.lineTo(-3,0); x.moveTo(4,-6);x.lineTo(5,0); x.stroke();

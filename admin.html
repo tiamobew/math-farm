@@ -382,7 +382,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./supabase-config.js"></script>
-<script src="./supabase-api.js?v=20260812-question-score"></script>
+<script src="./supabase-api.js?v=20260812-pet-food"></script>
 <script>
 /* ====== CONFIG (ให้ตรงกับ index.html) ====== */
 const CONFIG = { GAS_URL: "" }; // GitHub Pages: ใช้ localStorage ร่วมกับ index.html
@@ -413,6 +413,7 @@ const DEFAULT_SHOP=[
   {type:"decor",id:"statue",name:"รูปปั้น",emoji:"🗿",price:6000},
   {type:"decor",id:"fountain",name:"น้ำพุ",emoji:"⛲",price:8000},
   {type:"decor",id:"house",name:"บ้าน",emoji:"🏠",price:10000},
+  {type:"food",id:"pet_treat",name:"อาหารสัตว์แสนอร่อย",emoji:"🥕",price:150},
 ];
 
 /* ====== API layer ====== */
@@ -452,7 +453,9 @@ const DB={
   setQuestions(q){localStorage.setItem("cb_questions",JSON.stringify(q))},
   log(){return JSON.parse(localStorage.getItem("cb_log")||"[]")},
   shop(){let s=JSON.parse(localStorage.getItem("cb_shop")||"null");
-    if(!s){s=DEFAULT_SHOP.slice();localStorage.setItem("cb_shop",JSON.stringify(s));}return s;},
+    if(!s)s=DEFAULT_SHOP.slice();
+    else if(!s.some(x=>x.type==="food"))s=s.concat(DEFAULT_SHOP.filter(x=>x.type==="food"));
+    localStorage.setItem("cb_shop",JSON.stringify(s));return s;},
   setShop(s){localStorage.setItem("cb_shop",JSON.stringify(s))},
   farmStates(){return JSON.parse(localStorage.getItem("cb_farm_states")||"{}")},
   setFarmStates(s){localStorage.setItem("cb_farm_states",JSON.stringify(s))},
@@ -641,7 +644,7 @@ async function delMission(id){ if(!confirm("ลบภารกิจนี้?")
 function renderShopEditor(){
   document.getElementById("shopRows").innerHTML=SHOP.map((item,i)=>`
     <tr>
-      <td data-label="ประเภท">${item.type==="pets"?"สัตว์เลี้ยง":"ของตกแต่ง"}</td>
+      <td data-label="ประเภท">${item.type==="pets"?"สัตว์เลี้ยง":item.type==="food"?"อาหารสัตว์":"ของตกแต่ง"}</td>
       <td data-label="สินค้า" style="font-weight:800">${esc(item.emoji)} ${esc(item.name)}</td>
       <td data-label="รหัส"><code>${esc(item.id)}</code></td>
       <td data-label="ราคา"><input id="shopPrice${i}" type="number" min="0" max="100000000" step="1"
