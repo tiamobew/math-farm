@@ -670,6 +670,7 @@
   <div class="card" style="max-width:420px;width:100%;text-align:center">
     <div style="font-size:44px">🌳🪓</div>
     <div class="qText" id="qText"></div>
+    <div id="qMeta" class="muted" style="font-weight:800;margin:-5px 0 12px"></div>
     <input id="qAnswer" inputmode="numeric" placeholder="พิมพ์คำตอบ" style="text-align:center;font-size:24px"
       onkeydown="if(event.key==='Enter')submitAnswer()">
     <div id="qMsg" class="msg" style="min-height:24px;font-weight:800"></div>
@@ -684,7 +685,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./supabase-config.js"></script>
-<script src="./supabase-api.js?v=20260810-admin-student"></script>
+<script src="./supabase-api.js?v=20260812-question-score"></script>
 <script>
 /* ======================================================================
    CONFIG — วางลิงก์ Google Apps Script ที่ deploy แล้วตรงนี้เพื่อใช้งานจริง
@@ -853,14 +854,14 @@ let DECOR=[
 ];
 /* ---------- คลังโจทย์คณิตเริ่มต้น (ครูแก้ได้ในหน้าแอดมิน) ---------- */
 const DEFAULT_QUESTIONS=[
-  {id:"q1",question:"7 + 8 = ?",answer:"15",coins:25,subject:"คณิตศาสตร์"},
-  {id:"q2",question:"12 × 3 = ?",answer:"36",coins:25,subject:"คณิตศาสตร์"},
-  {id:"q3",question:"45 ÷ 9 = ?",answer:"5",coins:25,subject:"คณิตศาสตร์"},
-  {id:"q4",question:"25 − 17 = ?",answer:"8",coins:25,subject:"คณิตศาสตร์"},
-  {id:"q5",question:"6 × 7 = ?",answer:"42",coins:25,subject:"คณิตศาสตร์"},
-  {id:"q6",question:"9 + 15 = ?",answer:"24",coins:25,subject:"คณิตศาสตร์"},
-  {id:"q7",question:"100 − 64 = ?",answer:"36",coins:25,subject:"คณิตศาสตร์"},
-  {id:"q8",question:"8 × 8 = ?",answer:"64",coins:25,subject:"คณิตศาสตร์"},
+  {id:"q1",question:"7 + 8 = ?",answer:"15",score:1,coins:25,subject:"คณิตศาสตร์"},
+  {id:"q2",question:"12 × 3 = ?",answer:"36",score:1,coins:25,subject:"คณิตศาสตร์"},
+  {id:"q3",question:"45 ÷ 9 = ?",answer:"5",score:1,coins:25,subject:"คณิตศาสตร์"},
+  {id:"q4",question:"25 − 17 = ?",answer:"8",score:1,coins:25,subject:"คณิตศาสตร์"},
+  {id:"q5",question:"6 × 7 = ?",answer:"42",score:1,coins:25,subject:"คณิตศาสตร์"},
+  {id:"q6",question:"9 + 15 = ?",answer:"24",score:1,coins:25,subject:"คณิตศาสตร์"},
+  {id:"q7",question:"100 − 64 = ?",answer:"36",score:1,coins:25,subject:"คณิตศาสตร์"},
+  {id:"q8",question:"8 × 8 = ?",answer:"64",score:1,coins:25,subject:"คณิตศาสตร์"},
 ];
 function normAns(s){ return String(s==null?"":s).trim().toLowerCase().replace(/\s+/g,""); }
 function strictNum(s){ s=normAns(s);
@@ -974,13 +975,15 @@ function offlineApi(action,p){
       u.coins-=it.price; u.decor=u.decor||{}; u.decor[it.id]=(u.decor[it.id]||0)+1; DB.setUsers(users);
       return {ok:true,coins:u.coins,decor:u.decor}; }
     case "getQuestions":{
-      return {ok:true,questions:DB.questions().map(q=>({id:q.id,question:q.question,coins:q.coins||25,subject:q.subject||"คณิตศาสตร์"}))}; }
+      return {ok:true,questions:DB.questions().map(q=>({id:q.id,question:q.question,score:Number.isFinite(Number(q.score))?Number(q.score):1,coins:Number.isFinite(Number(q.coins))?Number(q.coins):25,subject:q.subject||"คณิตศาสตร์"}))}; }
     case "answerQuestion":{
       const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
       const q=DB.questions().find(x=>x.id===p.questionId); if(!q) return {ok:false,error:"ไม่พบคำถาม"};
       if(!compareAns(p.answer,q.answer)) return {ok:true,correct:false};
-      const reward=Number(q.coins)||5; u.coins=(u.coins||0)+reward; DB.setUsers(users);
-      return {ok:true,correct:true,reward,coins:u.coins}; }
+      const reward=Number.isFinite(Number(q.coins))?Math.max(0,Number(q.coins)):25;
+      const score=Number.isFinite(Number(q.score))?Math.max(0,Number(q.score)):1;
+      u.coins=(u.coins||0)+reward; u.points=(u.points||0)+score; DB.setUsers(users);
+      return {ok:true,correct:true,reward,score,coins:u.coins,points:u.points}; }
     case "buyPet":{
       const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
       const pet=PETS.find(x=>x.id===p.petId); if(!pet) return {ok:false,error:"ไม่พบสัตว์"};
@@ -1283,16 +1286,33 @@ let farmDirty=false, savedFarmState=null;
 let sessionChops=0, sessionStartCoins=0;   // สรุปผลรอบการเล่น
 const keys={};
 
-/* สุ่มโจทย์แบบ shuffle-bag + กรองตามวิชา: จับครบทุกข้อก่อนค่อยวนใหม่ = ไม่เจอข้อซ้ำบ่อย */
-let qBag=[], lastQId=null, currentSubject="";
+/* สุ่มโจทย์แบบ shuffle-bag + บันทึกรอบที่ใช้แล้ว: ไม่ซ้ำจนกว่าจะครบคลัง แม้รีโหลดหน้า */
+let qBag=[], lastQId=null, currentSubject="", questionCycles={};
 function activeQ(){ return currentSubject? QUESTIONS.filter(q=>(q.subject||"คณิตศาสตร์")===currentSubject) : QUESTIONS; }
-function refillBag(){ qBag=activeQ().slice();
+function questionCycleKey(){ return currentSubject||"*"; }
+function questionCycleStorageKey(){ return "cb_question_cycles_"+(ME&&ME.username?ME.username:"guest"); }
+function loadQuestionCycles(saved){
+  let local={}; try{ local=JSON.parse(localStorage.getItem(questionCycleStorageKey())||"{}"); }catch(_){ local={}; }
+  questionCycles={...(saved&&typeof saved==="object"?saved:{}),...(local&&typeof local==="object"?local:{})};
+}
+function persistQuestionCycles(){
+  try{ localStorage.setItem(questionCycleStorageKey(),JSON.stringify(questionCycles)); }catch(_){}
+}
+function refillBag(){ const pool=activeQ(), key=questionCycleKey(), validIds=new Set(pool.map(q=>q.id));
+  let used=Array.isArray(questionCycles[key])?questionCycles[key].filter(id=>validIds.has(id)):[];
+  if(used.length>=pool.length) used=[];
+  questionCycles[key]=[...new Set(used)];
+  const usedSet=new Set(questionCycles[key]);
+  qBag=pool.filter(q=>!usedSet.has(q.id));
   for(let i=qBag.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [qBag[i],qBag[j]]=[qBag[j],qBag[i]]; }
   if(qBag.length>1 && qBag[qBag.length-1] && qBag[qBag.length-1].id===lastQId)
     [qBag[qBag.length-1],qBag[0]]=[qBag[0],qBag[qBag.length-1]]; }   // กันซ้ำตอนขึ้นรอบใหม่
 function randomQ(){ if(!activeQ().length) return null;
   if(!qBag.length) refillBag();
-  const q=qBag.pop(); if(q) lastQId=q.id; return q; }
+  const q=qBag.pop(); if(q){ lastQId=q.id;
+    const key=questionCycleKey(); questionCycles[key]=[...(questionCycles[key]||[]),q.id];
+    persistQuestionCycles(); markFarmDirty();
+  } return q; }
 function fillSubjects(){ const sel=document.getElementById("subjectSel"); if(!sel) return;
   const subs=[...new Set(QUESTIONS.map(q=>q.subject).filter(Boolean))].sort();
   sel.innerHTML=`<option value="">ทุกวิชา</option>`+subs.map(s=>`<option>${esc(s)}</option>`).join("");
@@ -1300,7 +1320,7 @@ function fillSubjects(){ const sel=document.getElementById("subjectSel"); if(!se
 }
 function setSubject(s,markDirty=true){ const changed=currentSubject!==s; currentSubject=s; qBag=[]; lastQId=null;
   if(changed && markDirty) markFarmDirty();
-  if(typeof trees!=="undefined") trees.forEach(t=>{ t.q=randomQ(); }); }
+  if(typeof trees!=="undefined") trees.forEach(t=>{ t.q=null; }); }
 function ellipsePt(cx,cy,rx,ry){ const t=Math.random()*6.283,r=Math.sqrt(Math.random());
   return {x:cx+Math.cos(t)*rx*r, y:cy+Math.sin(t)*ry*r}; }
 function fieldPt(){ return {x:FIELD.x0+Math.random()*(FIELD.x1-FIELD.x0), y:FIELD.y0+Math.random()*(FIELD.y1-FIELD.y0)}; }
@@ -1317,7 +1337,7 @@ const TREESPOTS=[[110,250],[250,225],[430,240],[620,225],[800,255],
 function spawnTrees(saved){
   const spots=Array.isArray(saved)&&saved.length ? saved.map(t=>[Number(t.x),Number(t.y)]) : TREESPOTS;
   trees=spots.slice(0,20).map(pos=>{ const t={x:pos[0],y:pos[1]}; clampField(t);
-    return {x:t.x,y:t.y,alive:true,regrow:0,q:randomQ()}; });
+    return {x:t.x,y:t.y,alive:true,regrow:0,q:null}; });
 }
 function makeAnimal(type){ const fish=type==="fish";
   const p=fish?ellipsePt(POND.cx,POND.cy,POND.rx-14,POND.ry-9):fieldPt();
@@ -1343,6 +1363,7 @@ async function openFarm(){
   }
   const q=await api("getQuestions"); QUESTIONS=q.questions||[]; qBag=[]; lastQId=null;
   currentSubject=savedFarmState&&typeof savedFarmState.subject==="string"?savedFarmState.subject:"";
+  loadQuestionCycles(savedFarmState&&savedFarmState.questionCycles);
   fillSubjects();
   buildRobot(); updateCoins();
   const savedPlayer=savedFarmState&&savedFarmState.player?savedFarmState.player:{x:450,y:500};
@@ -1362,7 +1383,8 @@ function exitFarm(){
   if(sessionChops>0) setTimeout(()=>toast(`รอบนี้: ตัดไม้ ${sessionChops} ต้น · ได้ ${earned} 🪙`,2600,"#37c26b","#04210f"),250);
 }
 function farmSnapshot(){
-  return {version:1,player:{x:Math.round(player.x),y:Math.round(player.y)},subject:currentSubject||"",
+  return {version:2,player:{x:Math.round(player.x),y:Math.round(player.y)},subject:currentSubject||"",
+    questionCycles,
     trees:trees.map(t=>({x:Math.round(t.x),y:Math.round(t.y)}))};
 }
 function markFarmDirty(){ if(!farmActive)return; farmDirty=true; updateFarmSaveButton(); }
@@ -1438,9 +1460,11 @@ function stepAnimal(a){ if(a.pause>0){a.pause--;return;}
 
 /* ---- question ---- */
 function openChop(i){ const t=trees[i]; if(!t||!t.alive) return;
+  if(!t.q) t.q=randomQ();
   if(!t.q){ toast("คุณครูยังไม่ได้ตั้งโจทย์",1800,"var(--warn)","#3a2c00"); return; }
   curTree=i; qOpen=true;
   document.getElementById("qText").textContent=t.q.question;
+  document.getElementById("qMeta").textContent=`⭐ ${Number.isFinite(Number(t.q.score))?Number(t.q.score):1} คะแนน · 🪙 ${Number.isFinite(Number(t.q.coins))?Number(t.q.coins):25} เหรียญ`;
   const a=document.getElementById("qAnswer"); a.value=""; document.getElementById("qMsg").textContent="";
   document.getElementById("qModal").style.display="grid"; setTimeout(()=>a.focus(),50);
 }
@@ -1451,8 +1475,11 @@ async function submitAnswer(){
   if(!ans.trim()){ document.getElementById("qMsg").textContent="พิมพ์คำตอบก่อนนะ"; return; }
   Sound.click();
   const r=await api("answerQuestion",{username:ME.username,questionId:t.q.id,answer:ans});
-  if(r.ok && r.correct){ ME.coins=r.coins; updateCoins(); Sound.chop(); Sound.correct(); sessionChops++;
-    t.alive=false; t.regrow=farmT+300; closeQ(); toast(`ถูกต้อง! +${r.reward} 🪙`,1600,"#ffd23e","#3a2c00"); }
+  if(r.ok && r.correct){ ME.coins=r.coins; if(Number.isFinite(Number(r.points))) ME.points=Number(r.points);
+    const topPoints=document.getElementById("topPoints"); if(topPoints) topPoints.textContent=ME.points||0;
+    updateCoins(); Sound.chop(); Sound.correct(); sessionChops++;
+    const gainedScore=Number.isFinite(Number(r.score))?Number(r.score):(Number(t.q.score)||1);
+    t.alive=false; t.regrow=farmT+300; t.q=null; closeQ(); toast(`ถูกต้อง! +${gainedScore} คะแนน · +${r.reward} 🪙`,1900,"#ffd23e","#3a2c00"); }
   else if(r.ok){ Sound.wrong(); const m=document.getElementById("qMsg"); m.className="msg err"; m.textContent="ยังไม่ถูก ลองอีกครั้ง 💪";
     document.getElementById("qAnswer").select(); }
   else document.getElementById("qMsg").textContent=r.error||"เกิดข้อผิดพลาด";
@@ -1485,7 +1512,7 @@ async function buyDecor(id){ const r=await api("buyDecor",{username:ME.username,
 let animalTimer=240;
 function farmLoop(){ if(!farmActive){farmRAF=0;return;} farmT++;
   if(!qOpen) stepPlayer(); animals.forEach(stepAnimal);
-  trees.forEach(t=>{ if(!t.alive && farmT>=t.regrow){ t.alive=true; t.q=randomQ(); } });
+  trees.forEach(t=>{ if(!t.alive && farmT>=t.regrow){ t.alive=true; t.q=null; } });
   if(animals.length && --animalTimer<=0){ animalTimer=200+Math.random()*280;
     Sound.animal(animals[(Math.random()*animals.length)|0].type); }
   drawFarm(); farmRAF=requestAnimationFrame(farmLoop); }
