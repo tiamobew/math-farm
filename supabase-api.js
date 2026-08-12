@@ -165,7 +165,7 @@
           return ok();
         case "adminListQuestions": {
           await requireAdmin();
-          const rows = unwrap(await client.from("questions").select("id,question,answer,coins,subject").order("sort_order"));
+          const rows = unwrap(await client.from("questions").select("id,question,answer,score,coins,subject").eq("active", true).order("sort_order"));
           return ok({ questions: rows || [] });
         }
         case "adminSaveQuestion":
@@ -175,7 +175,9 @@
           const stamp = Date.now();
           const rows = (p.items || []).map((q, i) => ({
             id: `q${stamp + i}`, question: String(q.question), answer: String(q.answer),
-            coins: Number(q.coins) || 25, subject: q.subject || "คณิตศาสตร์", active: true
+            score: Number.isFinite(Number(q.score)) ? Math.max(0, Math.round(Number(q.score))) : 1,
+            coins: Number.isFinite(Number(q.coins)) ? Math.max(0, Math.round(Number(q.coins))) : 25,
+            subject: q.subject || "คณิตศาสตร์", active: true
           }));
           if (rows.length) unwrap(await client.from("questions").insert(rows));
           return ok({ added: rows.length });

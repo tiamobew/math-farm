@@ -273,22 +273,24 @@
               onkeydown="if(event.key==='Enter')addQuestion()"></div>
           <div style="flex:1;min-width:120px"><label>วิชา</label>
             <input id="nq_subject" list="subjectList" placeholder="วิชา" value="คณิตศาสตร์"></div>
+          <div style="width:100px"><label>คะแนน</label>
+            <input id="nq_score" type="number" min="0" max="100000" value="1"></div>
           <div style="width:100px"><label>เหรียญ</label>
-            <input id="nq_coins" type="number" value="25"></div>
+            <input id="nq_coins" type="number" min="0" max="100000" value="25"></div>
         </div>
         <datalist id="subjectList"></datalist>
         <button class="btn" style="margin-top:12px" onclick="addQuestion()">➕ เพิ่มโจทย์</button>
 
         <details style="margin:10px 0;background:#0e1730;border:1px solid var(--line);border-radius:12px;padding:12px">
           <summary style="cursor:pointer;font-weight:800">📥 นำเข้าหลายข้อพร้อมกัน (สำหรับใส่ทีละ 100–500 ข้อ)</summary>
-          <p class="muted" style="margin:8px 0">วางทีละบรรทัด รูปแบบ: <b>โจทย์ | คำตอบ | เหรียญ | วิชา</b> (เหรียญ/วิชาใส่หรือไม่ก็ได้ — เริ่มต้น 25 เหรียญ / คณิตศาสตร์) — ใช้ | หรือ , คั่นก็ได้</p>
+          <p class="muted" style="margin:8px 0">วางทีละบรรทัด รูปแบบ: <b>โจทย์ | คำตอบ | คะแนน | เหรียญ | วิชา</b> (ค่าเริ่มต้น 1 คะแนน / 25 เหรียญ / คณิตศาสตร์) — ใช้ | หรือ , คั่นก็ได้</p>
           <textarea id="q_bulk" rows="6" style="width:100%;font-family:Consolas,monospace"
-            placeholder="7 + 8 = ? | 15 | 25&#10;12 × 3 = ? | 36&#10;สามเหลี่ยมมีกี่ด้าน, 3"></textarea>
+            placeholder="7 + 8 = ? | 15 | 2 | 25 | คณิตศาสตร์&#10;12 × 3 = ? | 36 | 1 | 25 | คณิตศาสตร์"></textarea>
           <button class="btn" style="margin-top:8px" onclick="bulkAddQuestions()">นำเข้าโจทย์</button>
           <span id="bulkMsg" class="muted" style="margin-left:10px"></span>
 
           <div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px">
-            <p class="muted" style="margin-bottom:8px">📄 หรือนำเข้าจาก <b>ไฟล์ CSV</b> (คอลัมน์: โจทย์, คำตอบ, เหรียญ, วิชา) — เปิด/บันทึกจาก Excel หรือ Google Sheets ได้</p>
+            <p class="muted" style="margin-bottom:8px">📄 หรือนำเข้าจาก <b>ไฟล์ CSV</b> (คอลัมน์: โจทย์, คำตอบ, คะแนน, เหรียญ, วิชา) — เปิด/บันทึกจาก Excel หรือ Google Sheets ได้</p>
             <div class="row">
               <label class="btn ghost sm" style="cursor:pointer">📂 เลือกไฟล์ CSV
                 <input type="file" id="q_csv" accept=".csv,text/csv" style="display:none" onchange="importCsv(event)"></label>
@@ -299,8 +301,9 @@
         </details>
 
         <div class="row" style="justify-content:space-between;align-items:center;margin-top:8px">
-          <h2>โจทย์ทั้งหมด: <span class="accent" id="q_count">0</span> ข้อ</h2>
+          <h2>📚 คลังข้อสอบทั้งหมด: <span class="accent" id="q_count">0</span> ข้อ</h2>
           <div class="row">
+            <button class="btn ghost sm" onclick="exportQuestions()">⬇ ส่งออก CSV</button>
             <select id="q_subjectFilter" onchange="renderQuestionEditor()" style="max-width:170px"></select>
             <input id="q_search" placeholder="ค้นหาโจทย์/คำตอบ" style="max-width:200px" oninput="renderQuestionEditor()">
           </div>
@@ -379,7 +382,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./supabase-config.js"></script>
-<script src="./supabase-api.js?v=20260810-admin-student"></script>
+<script src="./supabase-api.js?v=20260812-question-score"></script>
 <script>
 /* ====== CONFIG (ให้ตรงกับ index.html) ====== */
 const CONFIG = { GAS_URL: "" }; // GitHub Pages: ใช้ localStorage ร่วมกับ index.html
@@ -395,10 +398,10 @@ function levelOf(pts){let i=0;LEVELS.forEach((l,j)=>{if(pts>=l.min)i=j});return 
 function levelLabel(pts){const l=levelOf(pts||0);return `${l.icon} Lv${l.n} ${l.name}`;}
 const SUBJECTS=["คณิตศาสตร์","วิทยาศาสตร์","ภาษาไทย","ภาษาอังกฤษ","สังคมศึกษา"];
 const DEFAULT_QUESTIONS=[
-  {id:"q1",question:"7 + 8 = ?",answer:"15",coins:25,subject:"คณิตศาสตร์"},{id:"q2",question:"12 × 3 = ?",answer:"36",coins:25,subject:"คณิตศาสตร์"},
-  {id:"q3",question:"45 ÷ 9 = ?",answer:"5",coins:25,subject:"คณิตศาสตร์"},{id:"q4",question:"25 − 17 = ?",answer:"8",coins:25,subject:"คณิตศาสตร์"},
-  {id:"q5",question:"6 × 7 = ?",answer:"42",coins:25,subject:"คณิตศาสตร์"},{id:"q6",question:"9 + 15 = ?",answer:"24",coins:25,subject:"คณิตศาสตร์"},
-  {id:"q7",question:"100 − 64 = ?",answer:"36",coins:25,subject:"คณิตศาสตร์"},{id:"q8",question:"8 × 8 = ?",answer:"64",coins:25,subject:"คณิตศาสตร์"},
+  {id:"q1",question:"7 + 8 = ?",answer:"15",score:1,coins:25,subject:"คณิตศาสตร์"},{id:"q2",question:"12 × 3 = ?",answer:"36",score:1,coins:25,subject:"คณิตศาสตร์"},
+  {id:"q3",question:"45 ÷ 9 = ?",answer:"5",score:1,coins:25,subject:"คณิตศาสตร์"},{id:"q4",question:"25 − 17 = ?",answer:"8",score:1,coins:25,subject:"คณิตศาสตร์"},
+  {id:"q5",question:"6 × 7 = ?",answer:"42",score:1,coins:25,subject:"คณิตศาสตร์"},{id:"q6",question:"9 + 15 = ?",answer:"24",score:1,coins:25,subject:"คณิตศาสตร์"},
+  {id:"q7",question:"100 − 64 = ?",answer:"36",score:1,coins:25,subject:"คณิตศาสตร์"},{id:"q8",question:"8 × 8 = ?",answer:"64",score:1,coins:25,subject:"คณิตศาสตร์"},
 ];
 const DEFAULT_SHOP=[
   {type:"pets",id:"chicken",name:"ไก่",emoji:"🐔",price:500},
@@ -492,7 +495,8 @@ function offlineAdmin(action,p){
       if(i>=0)q[i]=p.question; else q.push(p.question); DB.setQuestions(q); return {ok:true};
     }
     case "adminBulkAddQuestions":{ const q=DB.questions(); const now=Date.now();
-      (p.items||[]).forEach((it,i)=>q.push({id:"q"+(now+i),question:String(it.question),answer:String(it.answer),coins:Number(it.coins)||25,subject:it.subject||"คณิตศาสตร์"}));
+      (p.items||[]).forEach((it,i)=>q.push({id:"q"+(now+i),question:String(it.question),answer:String(it.answer),
+        score:validReward(it.score,1),coins:validReward(it.coins,25),subject:it.subject||"คณิตศาสตร์"}));
       DB.setQuestions(q); return {ok:true,added:(p.items||[]).length}; }
     case "adminDeleteQuestion":{ DB.setQuestions(DB.questions().filter(x=>x.id!==p.id)); return {ok:true}; }
     case "adminLog": return {ok:true,log:DB.log()};
@@ -675,16 +679,14 @@ function renderQuestionEditor(){
   const cnt=document.getElementById("q_count"); if(cnt) cnt.textContent=QUESTIONS.length;
   const q=(document.getElementById("q_search")?.value||"").toLowerCase();
   const subj=document.getElementById("q_subjectFilter")?.value||"";
-  let list=QUESTIONS.filter(x=>(!subj||(x.subject||"คณิตศาสตร์")===subj) && (!q||(x.question+" "+x.answer).toLowerCase().includes(q)));
-  const capped=list.length>200; if(capped) list=list.slice(0,200);
+  const list=QUESTIONS.filter(x=>(!subj||(x.subject||"คณิตศาสตร์")===subj) && (!q||(x.question+" "+x.answer).toLowerCase().includes(q)));
   document.getElementById("questionEditor").innerHTML=list.map(q=>`
     <div class="mrow"><span class="ic">❓</span>
       <span class="t">${esc(q.question)} <span class="muted">= ${esc(q.answer)}</span>
         <span class="subjTag">${esc(q.subject||"คณิตศาสตร์")}</span></span>
-      <span class="pt">🪙 ${q.coins}</span>
+      <span class="pt">⭐ ${validReward(q.score,1)} คะแนน · 🪙 ${validReward(q.coins,25)}</span>
       <button class="btn sm ghost" onclick='editQuestion(${jsArg(q.id)})'>แก้ไข</button>
       <button class="btn sm danger" onclick='delQuestion(${jsArg(q.id)})'>ลบ</button></div>`).join("")
-    + (capped?"<p class='muted' style='text-align:center;margin-top:8px'>แสดง 200 ข้อแรก — ใช้ตัวกรอง/ค้นหาเพื่อดูข้ออื่น</p>":"")
     || "<p class='muted'>ไม่พบโจทย์ในเงื่อนไขนี้</p>";
 }
 async function doImport(items,statusId){
@@ -697,14 +699,31 @@ async function doImport(items,statusId){
 }
 function rowsToItems(rows){
   const items=[];
-  rows.forEach((r,idx)=>{ if(!r||!r.length) return;
-    const q=String(r[0]==null?"":r[0]).trim();
-    const a=String(r[1]==null?"":r[1]).trim();
-    const c=parseInt(r[2])||25;
-    const s=String(r[3]==null?"":r[3]).trim()||"คณิตศาสตร์";
-    if(idx===0 && /^(question|โจทย์|คำถาม)$/i.test(q)) return;   // ข้ามแถวหัวตาราง
+  const headers=(rows[0]||[]).map(x=>String(x||"").trim().toLowerCase());
+  const hasHeader=/^(question|โจทย์|คำถาม)$/.test(headers[0]||"");
+  const findHeader=(names,fallback)=>{ const i=headers.findIndex(h=>names.includes(h)); return i>=0?i:fallback; };
+  const hi=hasHeader?{
+    question:findHeader(["question","โจทย์","คำถาม"],0),answer:findHeader(["answer","คำตอบ"],1),
+    score:findHeader(["score","points","point","คะแนน","แต้ม"],-1),coins:findHeader(["coins","coin","เหรียญ"],-1),
+    subject:findHeader(["subject","วิชา"],-1)
+  }:null;
+  rows.forEach((r,idx)=>{ if(!r||!r.length||(hasHeader&&idx===0)) return;
+    const q=String(r[hi?hi.question:0]??"").trim();
+    const a=String(r[hi?hi.answer:1]??"").trim();
+    let score=1,coins=25,subject="คณิตศาสตร์";
+    if(hi){
+      score=validReward(hi.score>=0?r[hi.score]:undefined,1);
+      coins=validReward(hi.coins>=0?r[hi.coins]:undefined,25);
+      subject=String(hi.subject>=0?r[hi.subject]:"").trim()||subject;
+    }else if(r.length>=5){
+      score=validReward(r[2],1); coins=validReward(r[3],25); subject=String(r[4]||"").trim()||subject;
+    }else if(r.length===4 && String(r[3]||"").trim()!=="" && Number.isFinite(Number(r[3]))){
+      score=validReward(r[2],1); coins=validReward(r[3],25);
+    }else{
+      coins=validReward(r[2],25); subject=String(r[3]||"").trim()||subject;
+    }
     if(!q || a==="") return;
-    items.push({question:q,answer:a,coins:c,subject:s}); });
+    items.push({question:q,answer:a,score,coins,subject}); });
   return items;
 }
 async function bulkAddQuestions(){
@@ -735,28 +754,30 @@ function importCsv(e){ const f=e.target.files[0]; if(!f) return;
   rd.readAsText(f,"utf-8"); }
 function downloadCsvTemplate(){
   download("ตัวอย่างโจทย์.csv",
-    csv([["โจทย์","คำตอบ","เหรียญ","วิชา"],
-      ["7 + 8 = ?","15","25","คณิตศาสตร์"],
-      ["น้ำเดือดที่กี่องศาเซลเซียส","100","25","วิทยาศาสตร์"],
-      ["cat แปลว่าอะไร","แมว","25","ภาษาอังกฤษ"]]));
+    csv([["โจทย์","คำตอบ","คะแนน","เหรียญ","วิชา"],
+      ["7 + 8 = ?","15","2","25","คณิตศาสตร์"],
+      ["น้ำเดือดที่กี่องศาเซลเซียส","100","3","25","วิทยาศาสตร์"],
+      ["cat แปลว่าอะไร","แมว","1","25","ภาษาอังกฤษ"]]));
 }
 async function addQuestion(){
   const question=document.getElementById("nq_question").value.trim();
   const answer=document.getElementById("nq_answer").value.trim();
   const subject=document.getElementById("nq_subject").value.trim()||"คณิตศาสตร์";
-  const coins=parseInt(document.getElementById("nq_coins").value)||25;
+  const score=validReward(document.getElementById("nq_score").value,1);
+  const coins=validReward(document.getElementById("nq_coins").value,25);
   if(!question||!answer) return alert("กรอกโจทย์และคำตอบ");
-  await api("adminSaveQuestion",{question:{id:"q"+Date.now(),question,answer,coins,subject}});
+  await api("adminSaveQuestion",{question:{id:"q"+Date.now(),question,answer,score,coins,subject}});
   document.getElementById("nq_question").value=""; document.getElementById("nq_answer").value="";
-  document.getElementById("nq_coins").value="25"; refreshAll();
+  document.getElementById("nq_score").value="1"; document.getElementById("nq_coins").value="25"; refreshAll();
 }
 async function editQuestion(id){
   const q=QUESTIONS.find(x=>x.id===id); if(!q)return;
   const question=prompt("โจทย์",q.question); if(question===null)return;
   const answer=prompt("คำตอบ",q.answer); if(answer===null)return;
   const subject=prompt("วิชา",q.subject||"คณิตศาสตร์"); if(subject===null)return;
-  const coins=parseInt(prompt("เหรียญที่ได้",q.coins)); if(isNaN(coins))return;
-  await api("adminSaveQuestion",{question:{...q,question,answer,coins,subject:subject.trim()||"คณิตศาสตร์"}}); refreshAll();
+  const score=Number(prompt("คะแนนที่ได้",validReward(q.score,1))); if(!Number.isFinite(score)||score<0)return;
+  const coins=Number(prompt("เหรียญที่ได้",validReward(q.coins,25))); if(!Number.isFinite(coins)||coins<0)return;
+  await api("adminSaveQuestion",{question:{...q,question,answer,score:Math.round(score),coins:Math.round(coins),subject:subject.trim()||"คณิตศาสตร์"}}); refreshAll();
 }
 async function delQuestion(id){ if(!confirm("ลบโจทย์นี้?"))return;
   await api("adminDeleteQuestion",{id}); refreshAll(); }
@@ -827,6 +848,11 @@ function exportLog(){
   LOG.forEach(l=>rows.push([l.username,mName(l.missionId),l.points,l.date,l.at]));
   download("ประวัติการทำภารกิจ.csv",csv(rows));
 }
+function exportQuestions(){
+  const rows=[["โจทย์","คำตอบ","คะแนน","เหรียญ","วิชา"]];
+  QUESTIONS.forEach(q=>rows.push([q.question,q.answer,validReward(q.score,1),validReward(q.coins,25),q.subject||"คณิตศาสตร์"]));
+  download("คลังข้อสอบทั้งหมด.csv",csv(rows));
+}
 
 /* ====== helpers ====== */
 function setMsg(id,text,type){
@@ -835,6 +861,7 @@ function setMsg(id,text,type){
 }
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function jsArg(s){ return JSON.stringify(String(s??"")).replace(/'/g,"\\u0027").replace(/</g,"\\u003c"); }
+function validReward(value,fallback){ const n=Number(value); return Number.isFinite(n)&&n>=0?Math.min(100000,Math.round(n)):fallback; }
 function validColor(s){ return /^#[0-9a-f]{6}$/i.test(String(s||"")) ? s : "#4a90ff"; }
 function safePhotoUrl(s){
   const u=String(s||"");
