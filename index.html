@@ -199,9 +199,8 @@
   .shopCard button:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.5)}
   .petPreview{min-height:120px;display:grid;place-items:center;background:linear-gradient(180deg,#dff6ff,#eaf8df);
     border:2px solid #b9dda5;border-radius:18px;margin:12px 0;position:relative;overflow:hidden}
-  .petPreview .petEmoji{font-size:74px;filter:drop-shadow(0 8px 6px rgba(0,0,0,.18))}
-  .petPreview .petWear{position:absolute;font-size:38px;transform:translate(22px,-31px)}
-  .petPreview .petAura{position:absolute;width:92px;height:92px;border:7px solid transparent;border-radius:50%;opacity:.75}
+  .petPreview canvas{width:180px;height:120px;filter:drop-shadow(0 8px 6px rgba(0,0,0,.18))}
+  .accessoryCard .pe{filter:brightness(.68) saturate(1.4) contrast(1.08)}
   .accessoryCard.on{border-color:#ff9d3e;box-shadow:0 0 0 3px rgba(255,157,62,.2)}
   .foodNote{background:#fff8df;border:1px solid #f0cf68;color:#755300;padding:9px 12px;border-radius:12px;font-weight:800}
   .qText{font-size:34px;font-weight:900;text-align:center;margin:14px 0;color:var(--accent)}
@@ -881,9 +880,9 @@ let FOOD=[
 ];
 const PET_ACCESSORIES=[
   {id:"hat",name:"หมวก",emoji:"🎩"},{id:"bow",name:"โบว์",emoji:"🎀"},{id:"bag",name:"กระเป๋า",emoji:"🎒"},
-  {id:"color_pink",name:"สีชมพู",emoji:"🩷",color:"#ff72b6"},
-  {id:"color_blue",name:"สีฟ้า",emoji:"🩵",color:"#45bff5"},
-  {id:"color_gold",name:"สีทอง",emoji:"💛",color:"#ffc928"},
+  {id:"color_pink",name:"สีชมพูเข้ม",emoji:"🩷",color:"#d53f86"},
+  {id:"color_blue",name:"สีฟ้าเข้ม",emoji:"🩵",color:"#197daa"},
+  {id:"color_gold",name:"สีทองเข้ม",emoji:"💛",color:"#bd8100"},
 ];
 /* ---------- คลังโจทย์คณิตเริ่มต้น (ครูแก้ได้ในหน้าแอดมิน) ---------- */
 const DEFAULT_QUESTIONS=[
@@ -1575,9 +1574,8 @@ function renderPetCare(){ const a=animals[selectedAnimalIndex]; if(!a)return clo
   const pet=PETS.find(x=>x.id===a.type)||{name:"สัตว์เลี้ยง",emoji:a.emoji};
   const current=ME.petStyles?.[a.key]||"", item=PET_ACCESSORIES.find(x=>x.id===current);
   document.getElementById("petCareTitle").textContent=`${pet.emoji} ${pet.name}ตัวที่ ${Number(a.key.split(":")[1])+1}`;
-  const aura=item?.color?`<span class="petAura" style="border-color:${item.color};box-shadow:0 0 24px ${item.color}"></span>`:"";
-  const wear=item&&!item.color?`<span class="petWear">${item.emoji}</span>`:"";
-  document.getElementById("petPreview").innerHTML=`${aura}<span class="petEmoji">${pet.emoji}</span>${wear}`;
+  document.getElementById("petPreview").innerHTML='<canvas id="petPreviewCanvas" width="360" height="240"></canvas>';
+  drawPetPreview(a,item);
   document.getElementById("accessoryGrid").innerHTML=PET_ACCESSORIES.map(it=>`
     <div class="shopCard accessoryCard ${it.id===current?"on":""}">
       <div class="pe">${it.emoji}</div><div class="pn">${it.name}</div>
@@ -1767,47 +1765,58 @@ function drawTree(x,t,hi){ const s=depth(t.y), tx=t.x, ty=t.y;
 function drawAnimal(x,a){ const s=depth(a.y), mv=a.pause<=0;
   x.save(); x.translate(a.x,a.y); x.scale(s,s); if(a.dir<0)x.scale(-1,1);
   const accessory=PET_ACCESSORIES.find(it=>it.id===(ME.petStyles?.[a.key]||""));
-  if(accessory?.color){ x.save(); x.strokeStyle=accessory.color; x.globalAlpha=.75; x.lineWidth=5;
-    el(x,0,a.fish?-4:-17,a.fish?23:28,a.fish?15:25); x.stroke(); x.restore(); }
-  if(a.type==="fish"){ drawFish(x); }
+  if(a.type==="fish"){ drawFish(x,accessory?.color); }
   else { x.fillStyle="rgba(0,0,0,.18)"; el(x,0,0,16,5); x.fill();
-    if(a.type==="duck") drawDuck(x,mv); else if(a.type==="pig") drawPig(x,mv); else drawChicken(x,mv); }
-  if(accessory && !accessory.color){ x.font="22px 'Segoe UI Emoji','Apple Color Emoji',sans-serif"; x.textAlign="center"; x.textBaseline="middle";
-    const pos=accessory.id==="hat"?[a.fish?4:10,a.fish?-17:-40]:accessory.id==="bow"?[a.fish?8:12,a.fish?4:-16]:[-10,a.fish?-4:-15];
-    x.fillText(accessory.emoji,pos[0],pos[1]); }
+    if(a.type==="duck") drawDuck(x,mv,accessory?.color); else if(a.type==="pig") drawPig(x,mv,accessory?.color); else drawChicken(x,mv,accessory?.color); }
+  drawPetWear(x,a.fish,accessory);
   x.restore(); }
-function drawChicken(x,mv){ const b=mv?Math.sin(farmT*.35):0; x.save(); x.translate(0,b);
+function shadeColor(hex,factor=.7){ const h=String(hex||"").replace("#",""); if(!/^[0-9a-f]{6}$/i.test(h))return hex;
+  return "#"+[0,2,4].map(i=>Math.max(0,Math.min(255,Math.round(parseInt(h.slice(i,i+2),16)*factor))).toString(16).padStart(2,"0")).join(""); }
+function drawPetWear(x,isFish,accessory){ if(!accessory||accessory.color)return;
+  x.save(); x.filter="brightness(.62) saturate(1.5) contrast(1.12)";
+  x.font="22px 'Segoe UI Emoji','Apple Color Emoji',sans-serif"; x.textAlign="center"; x.textBaseline="middle";
+  const pos=accessory.id==="hat"?[isFish?4:10,isFish?-17:-40]:accessory.id==="bow"?[isFish?8:12,isFish?4:-16]:[-10,isFish?-4:-15];
+  x.fillText(accessory.emoji,pos[0],pos[1]); x.restore(); }
+function drawPetPreview(a,accessory){ const c=document.getElementById("petPreviewCanvas"); if(!c)return; const x=c.getContext("2d");
+  x.clearRect(0,0,c.width,c.height); x.save(); x.translate(180,190); x.scale(3.4,3.4);
+  x.fillStyle="rgba(37,74,48,.17)"; el(x,0,3,a.fish?20:18,a.fish?6:5); x.fill();
+  if(a.type==="fish")drawFish(x,accessory?.color);
+  else if(a.type==="duck")drawDuck(x,false,accessory?.color);
+  else if(a.type==="pig")drawPig(x,false,accessory?.color);
+  else drawChicken(x,false,accessory?.color);
+  drawPetWear(x,a.fish,accessory); x.restore(); }
+function drawChicken(x,mv,coat){ const b=mv?Math.sin(farmT*.35):0, body=coat||"#fff", shade=coat?shadeColor(coat,.72):"#eee"; x.save(); x.translate(0,b);
   x.strokeStyle="#ef9b2e"; x.lineWidth=2.2; x.beginPath(); x.moveTo(-2,-6);x.lineTo(-3,0); x.moveTo(4,-6);x.lineTo(5,0); x.stroke();
-  x.fillStyle="#f0f0f0"; x.beginPath(); x.moveTo(-10,-14);x.lineTo(-21,-23);x.lineTo(-10,-25); x.closePath(); x.fill();
-  x.fillStyle="#fff"; el(x,0,-14,14,12); x.fill();
-  x.fillStyle="#eee"; el(x,-2,-13,7,6); x.fill();
-  x.fillStyle="#fff"; el(x,10,-26,8,8); x.fill();
+  x.fillStyle=shade; x.beginPath(); x.moveTo(-10,-14);x.lineTo(-21,-23);x.lineTo(-10,-25); x.closePath(); x.fill();
+  x.fillStyle=body; el(x,0,-14,14,12); x.fill();
+  x.fillStyle=shade; el(x,-2,-13,7,6); x.fill();
+  x.fillStyle=body; el(x,10,-26,8,8); x.fill();
   x.fillStyle="#e5484d"; el(x,8,-33,3,3); x.fill(); el(x,12,-34,3,3); x.fill();
   x.fillStyle="#ff9d2e"; x.beginPath(); x.moveTo(17,-26);x.lineTo(25,-24);x.lineTo(17,-22); x.closePath(); x.fill();
   x.fillStyle="#e5484d"; el(x,17,-20,2.4,3.4); x.fill();
   x.fillStyle="#222"; el(x,12,-27,1.6,1.6); x.fill(); x.restore(); }
-function drawDuck(x,mv){ const b=mv?Math.sin(farmT*.35):0; x.save(); x.translate(0,b);
+function drawDuck(x,mv,coat){ const b=mv?Math.sin(farmT*.35):0, body=coat||"#ffd23e", shade=coat?shadeColor(coat,.72):"#f0be2a"; x.save(); x.translate(0,b);
   x.strokeStyle="#ef9b2e"; x.lineWidth=2.2; x.beginPath(); x.moveTo(-1,-5);x.lineTo(-2,0); x.moveTo(4,-5);x.lineTo(5,0); x.stroke();
-  x.fillStyle="#ffd23e"; x.beginPath(); x.moveTo(-12,-14);x.lineTo(-20,-19);x.lineTo(-12,-21); x.closePath(); x.fill();
-  x.fillStyle="#ffd23e"; el(x,0,-14,15,11); x.fill();
-  x.fillStyle="#f0be2a"; el(x,-2,-13,7,5); x.fill();
-  x.fillStyle="#ffd23e"; el(x,8,-19,5,7); x.fill(); el(x,12,-25,7.5,8); x.fill();
+  x.fillStyle=shade; x.beginPath(); x.moveTo(-12,-14);x.lineTo(-20,-19);x.lineTo(-12,-21); x.closePath(); x.fill();
+  x.fillStyle=body; el(x,0,-14,15,11); x.fill();
+  x.fillStyle=shade; el(x,-2,-13,7,5); x.fill();
+  x.fillStyle=body; el(x,8,-19,5,7); x.fill(); el(x,12,-25,7.5,8); x.fill();
   x.fillStyle="#ff9d2e"; el(x,20,-25,5.5,3); x.fill();
   x.fillStyle="#222"; el(x,13,-27,1.6,1.6); x.fill(); x.restore(); }
-function drawPig(x,mv){ const b=mv?Math.sin(farmT*.35):0; x.save(); x.translate(0,b);
-  x.strokeStyle="#d67a97"; x.lineWidth=3; x.beginPath(); x.moveTo(-7,-6);x.lineTo(-7,0); x.moveTo(-1,-6);x.lineTo(-1,0); x.moveTo(5,-6);x.lineTo(5,0); x.stroke();
-  x.strokeStyle="#e58aa8"; x.lineWidth=2; x.beginPath(); x.arc(-16,-17,3.2,0.3,5); x.stroke();
-  x.fillStyle="#f4a6c0"; el(x,0,-16,17,12); x.fill();
-  x.fillStyle="#ec86a8"; x.beginPath(); x.moveTo(10,-27);x.lineTo(15,-31);x.lineTo(17,-24); x.closePath(); x.fill();
-  x.fillStyle="#f4a6c0"; el(x,14,-17,10,9); x.fill();
-  x.fillStyle="#ec86a8"; el(x,23,-16,5,4.2); x.fill();
-  x.fillStyle="#b95f7d"; el(x,22,-16,1,1.6); x.fill(); el(x,25,-16,1,1.6); x.fill();
+function drawPig(x,mv,coat){ const b=mv?Math.sin(farmT*.35):0, body=coat||"#f4a6c0", shade=coat?shadeColor(coat,.7):"#ec86a8"; x.save(); x.translate(0,b);
+  x.strokeStyle=shadeColor(body,.72); x.lineWidth=3; x.beginPath(); x.moveTo(-7,-6);x.lineTo(-7,0); x.moveTo(-1,-6);x.lineTo(-1,0); x.moveTo(5,-6);x.lineTo(5,0); x.stroke();
+  x.strokeStyle=shade; x.lineWidth=2; x.beginPath(); x.arc(-16,-17,3.2,0.3,5); x.stroke();
+  x.fillStyle=body; el(x,0,-16,17,12); x.fill();
+  x.fillStyle=shade; x.beginPath(); x.moveTo(10,-27);x.lineTo(15,-31);x.lineTo(17,-24); x.closePath(); x.fill();
+  x.fillStyle=body; el(x,14,-17,10,9); x.fill();
+  x.fillStyle=shade; el(x,23,-16,5,4.2); x.fill();
+  x.fillStyle=shadeColor(shade,.72); el(x,22,-16,1,1.6); x.fill(); el(x,25,-16,1,1.6); x.fill();
   x.fillStyle="#5a2f3f"; el(x,16,-20,1.7,1.7); x.fill(); x.restore(); }
-function drawFish(x){ const w=Math.sin(farmT*.3)*2;
+function drawFish(x,coat){ const w=Math.sin(farmT*.3)*2, body=coat||"#ff8c3a", shade=coat?shadeColor(coat,.68):"#e0722a";
   x.save(); x.translate(0,-4);
-  x.fillStyle="#e0722a"; x.beginPath(); x.moveTo(-9,-2+w);x.lineTo(-18,-8);x.lineTo(-18,4); x.closePath(); x.fill();
-  x.fillStyle="#ff8c3a"; el(x,0,0,13,8); x.fill();
-  x.fillStyle="#e0722a"; x.beginPath(); x.moveTo(-3,-8);x.lineTo(4,-8);x.lineTo(0,-1); x.closePath(); x.fill();
+  x.fillStyle=shade; x.beginPath(); x.moveTo(-9,-2+w);x.lineTo(-18,-8);x.lineTo(-18,4); x.closePath(); x.fill();
+  x.fillStyle=body; el(x,0,0,13,8); x.fill();
+  x.fillStyle=shade; x.beginPath(); x.moveTo(-3,-8);x.lineTo(4,-8);x.lineTo(0,-1); x.closePath(); x.fill();
   x.fillStyle="#fff"; el(x,7,-1,2.6,2.6); x.fill(); x.fillStyle="#222"; el(x,8,-1,1.3,1.3); x.fill();
   x.restore(); }
 function drawPlayer(x){ const s=depth(player.y); x.fillStyle="rgba(0,0,0,.18)"; el(x,player.x,player.y+2,20*s,8*s); x.fill();
