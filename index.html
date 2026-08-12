@@ -64,7 +64,10 @@
   .top .who{flex:1}
   .top .who .nm{font-weight:800;font-size:20px}
   .topActions{display:flex;align-items:center;gap:8px}
-  .avatar{width:60px;height:60px;border-radius:14px;background:#0e1730;display:grid;place-items:center;flex:none}
+  .avatar{width:60px;height:60px;border-radius:14px;background:#0e1730;display:grid;place-items:center;flex:none;
+    padding:0;transition:transform .18s ease,box-shadow .18s ease}
+  button.avatar:hover{transform:translateY(-2px) rotate(-2deg);box-shadow:0 6px 14px rgba(55,139,97,.2)}
+  button.avatar:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
   .avatar svg{width:52px;height:52px}
   .points{font-weight:900;font-size:22px;color:var(--warn)}
 
@@ -81,13 +84,32 @@
   .mission .btn{padding:9px 14px;font-size:16px}
 
   /* ---------- CUSTOMIZE ---------- */
-  .heroBot{display:grid;place-items:center;padding:10px}
-  .heroBot svg{width:200px;height:220px;filter:drop-shadow(0 12px 20px rgba(0,0,0,.5))}
+  .heroBot{display:grid;place-items:center;padding:10px;position:relative;min-height:240px}
+  .heroBot svg{width:200px;height:220px;filter:drop-shadow(0 12px 20px rgba(0,0,0,.5));cursor:pointer}
   .swatches{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:14px 0}
   .sw{width:44px;height:44px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:transform .1s}
   .sw:hover{transform:scale(1.12)}
   .sw.on{border-color:#fff;transform:scale(1.12)}
-  .robotName{text-align:center;font-weight:900;font-size:24px;color:var(--accent);margin-top:6px}
+  .robotName{text-align:center;font-family:var(--font-friendly);font-weight:900;font-size:24px;color:var(--accent);margin-top:6px}
+  button.robotName{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-inline:auto;padding:5px 13px;
+    background:transparent;border:2px dashed transparent;border-radius:14px;transition:.18s ease}
+  button.robotName:hover,button.robotName:focus-visible{border-color:#83c9a1;background:#edfaef;outline:none;transform:translateY(-1px)}
+  .namePencil{font-size:17px;transition:transform .18s ease}
+  button.robotName:hover .namePencil{transform:rotate(-14deg) scale(1.12)}
+  .nameEditor{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+  .nameEditor .btn{white-space:nowrap}
+  .nameMeta{display:flex;justify-content:space-between;gap:10px;margin-top:5px;font-size:14px;color:var(--muted)}
+  .mascotBubble{position:absolute;right:4px;top:14px;max-width:155px;padding:8px 12px;border-radius:15px 15px 15px 4px;
+    background:#fff;color:#286044;border:2px solid #8fd2a7;font-family:var(--font-friendly);font-weight:700;font-size:15px;
+    box-shadow:0 5px 12px rgba(45,113,72,.16);opacity:0;transform:translateY(8px) scale(.9);pointer-events:none;transition:.2s ease}
+  .mascotBubble.show{opacity:1;transform:none}
+  .robot-mascot .mascot-eye{transform-box:fill-box;transform-origin:center;animation:mascotBlink 4.8s ease-in-out infinite}
+  .robot-mascot .mascot-arm-right{transform-box:fill-box;transform-origin:15% 70%}
+  .heroBot.mascot-wave .mascot-arm-right{animation:mascotWave .7s ease-in-out 2}
+  .heroBot.mascot-happy svg{animation:mascotCelebrate .72s cubic-bezier(.2,.85,.3,1)}
+  .heroBot.mascot-happy .mascot-cheek{opacity:.85}
+  .heroBot.mascot-surprised .mascot-mouth-smile{opacity:0}
+  .heroBot.mascot-surprised .mascot-mouth-o{opacity:1}
   .modeTag{position:fixed;bottom:10px;right:12px;font-size:13px;color:var(--muted);
     background:rgba(0,0,0,.35);padding:4px 10px;border-radius:8px}
 
@@ -365,6 +387,9 @@
   @keyframes twinkle{0%,100%{transform:scale(.8) rotate(-8deg);opacity:.45}50%{transform:scale(1.15) rotate(8deg);opacity:1}}
   @keyframes cardRise{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
   @keyframes iconWiggle{0%,88%,100%{transform:rotate(0)}92%{transform:rotate(-7deg)}96%{transform:rotate(7deg)}}
+  @keyframes mascotBlink{0%,43%,47%,100%{transform:scaleY(1)}45%{transform:scaleY(.08)}}
+  @keyframes mascotWave{0%,100%{transform:rotate(0)}35%{transform:rotate(-25deg)}70%{transform:rotate(14deg)}}
+  @keyframes mascotCelebrate{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-14px) rotate(-4deg)}65%{transform:translateY(-5px) rotate(4deg)}}
 
   @media(max-width:760px){
     #authScreen .wrap{display:flex;flex-direction:column;justify-content:center;gap:5px;padding:12px 10px 64px}
@@ -380,6 +405,8 @@
     .mission{align-items:center}.mission .ic{width:48px;height:48px;font-size:29px}
     .topActions .btn{white-space:normal;line-height:1.2}
     .modeTag{display:none}
+    .mascotBubble{right:-2px;top:8px;max-width:130px;font-size:13px}
+    .nameEditor{grid-template-columns:1fr}
   }
   @media(prefers-reduced-motion:reduce){
     *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
@@ -441,7 +468,7 @@
 <section id="appScreen" class="screen">
   <div class="wrap">
     <div class="top">
-      <div class="avatar" id="topAvatar"></div>
+      <button class="avatar" id="topAvatar" type="button" onclick="showScreen('customizeScreen')" aria-label="แก้ไขชื่อตัวละครและสี" title="แตะเพื่อปรับแต่งตัวละคร"></button>
       <div class="who">
         <div class="nm" id="topName">ชื่อหุ่น</div>
         <div class="muted" id="topOwner">ผู้เรียน</div>
@@ -488,14 +515,22 @@
   <div class="wrap" style="max-width:520px">
     <div class="card center">
       <h2>ปรับแต่งหุ่นยนต์ของฉัน</h2>
-      <div class="heroBot" id="custBotWrap"><div id="custBot"></div></div>
-      <div class="robotName" id="custName">น้องคณิต</div>
+      <div class="heroBot" id="custBotWrap" onclick="playMascotGreeting()" role="button" tabindex="0" aria-label="ทักทายน้องคณิต">
+        <div id="custBot"></div><div class="mascotBubble" id="mascotBubble" aria-live="polite"></div>
+      </div>
+      <button class="robotName" id="custName" type="button" onclick="focusCharacterName()" title="แตะเพื่อแก้ชื่อ">
+        <span id="custNameText">น้องคณิต</span><span class="namePencil" aria-hidden="true">✏️</span>
+      </button>
 
       <label style="text-align:left">เลือกสี</label>
       <div class="swatches" id="swatches"></div>
 
-      <label style="text-align:left">ตั้งชื่อหุ่นยนต์</label>
-      <input id="cust_name" maxlength="20" placeholder="ตั้งชื่อให้เพื่อนหุ่นของหนู">
+      <label style="text-align:left" for="cust_name">ตั้งชื่อเพื่อนหุ่นของหนู</label>
+      <div class="nameEditor">
+        <input id="cust_name" maxlength="20" autocomplete="off" placeholder="เช่น น้องคณิต หรือ เจ้ากล้า">
+        <button class="btn ghost sm" type="button" onclick="randomCharacterName()">🎲 สุ่มชื่อ</button>
+      </div>
+      <div class="nameMeta"><span>แตะชื่อด้านบนหรือพิมพ์ชื่อใหม่ได้เลย</span><span id="custNameCount">0/20</span></div>
 
       <div class="row" style="justify-content:center;margin-top:18px">
         <button class="btn ghost" onclick="leaveCustomize()">◀ กลับ</button>
@@ -685,8 +720,7 @@ let robotSvgSeq=0;
 function robotSVG(c,cd,ac){
   c=c||"var(--c)"; cd=cd||"var(--cd)"; ac=ac||"var(--accent)";
   const uid="robot3d"+(++robotSvgSeq);
-  return `<svg viewBox="0 0 240 260" width="240" height="260" xmlns="http://www.w3.org/2000/svg">
-    <style>.cursor{animation:blink 1s steps(1) infinite}@keyframes blink{50%{opacity:0}}</style>
+  return `<svg class="robot-mascot" viewBox="0 0 240 260" width="240" height="260" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <defs>
       <linearGradient id="${uid}Body" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stop-color="#fff"/><stop offset=".13" stop-color="${c}"/>
@@ -717,12 +751,18 @@ function robotSVG(c,cd,ac){
     <ellipse cx="101" cy="48" rx="25" ry="11" fill="#fff" opacity=".2"/>
     <rect x="82" y="60" width="76" height="50" rx="12" fill="url(#${uid}Glass)" stroke="#fff" stroke-opacity=".18" stroke-width="2"/>
     <path d="M91 70 Q120 55 149 70" fill="none" stroke="#fff" stroke-opacity=".17" stroke-width="4" stroke-linecap="round"/>
-    <g filter="url(#${uid}Glow)"><text x="96" y="94" font-family="Consolas,monospace" font-size="30" fill="${ac}" font-weight="700">&gt;_</text>
-    <rect class="cursor" x="132" y="74" width="12" height="22" fill="${ac}"/></g>
+    <g filter="url(#${uid}Glow)">
+      <g class="mascot-eye"><ellipse cx="104" cy="82" rx="8" ry="11" fill="${ac}"/><circle cx="101" cy="78" r="2.5" fill="#fff"/></g>
+      <g class="mascot-eye"><ellipse cx="136" cy="82" rx="8" ry="11" fill="${ac}"/><circle cx="133" cy="78" r="2.5" fill="#fff"/></g>
+      <path class="mascot-mouth-smile" d="M105 96 Q120 108 135 96" fill="none" stroke="${ac}" stroke-width="4" stroke-linecap="round"/>
+      <circle class="mascot-mouth-o" cx="120" cy="99" r="6" fill="${ac}" opacity="0"/>
+    </g>
+    <g class="mascot-cheek" fill="#ff8eb8" opacity=".42"><ellipse cx="93" cy="97" rx="6" ry="3"/><ellipse cx="147" cy="97" rx="6" ry="3"/></g>
     <rect x="110" y="120" width="20" height="14" rx="3" fill="url(#${uid}Metal)"/>
     <line x1="86" y1="168" x2="58" y2="150" stroke="${cd}" stroke-width="14" stroke-linecap="round"/>
-    <line x1="154" y1="168" x2="182" y2="150" stroke="${cd}" stroke-width="14" stroke-linecap="round"/>
-    <circle cx="52" cy="148" r="13" fill="url(#${uid}Body)"/><circle cx="188" cy="148" r="13" fill="url(#${uid}Body)"/>
+    <g class="mascot-arm-right"><line x1="154" y1="168" x2="182" y2="150" stroke="${cd}" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="188" cy="148" r="13" fill="url(#${uid}Body)"/></g>
+    <circle cx="52" cy="148" r="13" fill="url(#${uid}Body)"/>
     <rect x="84" y="132" width="72" height="72" rx="18" fill="url(#${uid}Body)"/>
     <path d="M95 143 Q119 130 145 143" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="5" stroke-linecap="round"/>
     <rect x="98" y="150" width="44" height="30" rx="7" fill="url(#${uid}Glass)" stroke="#fff" stroke-opacity=".15"/>
@@ -1134,21 +1174,51 @@ function openCustomize(){
   const bot=document.getElementById("custBot"); bot.innerHTML=robotSVG();
   const wrap=document.getElementById("custBotWrap"); applyColor(wrap,ME.color);
   document.getElementById("cust_name").value=customizeOriginal.name;
-  document.getElementById("custName").textContent=customizeOriginal.name;
+  previewCharacterName(customizeOriginal.name,false);
   const sw=document.getElementById("swatches"); sw.innerHTML="";
   COLORS.forEach(([name,c])=>{
     const d=document.createElement("div"); d.className="sw"+(c===ME._pickColor?" on":"");
     d.style.background=c; d.title=name; d.onclick=()=>pickColor(c,d); sw.appendChild(d);
   });
   markSwatch();
-  document.getElementById("cust_name").oninput=e=>{
-    document.getElementById("custName").textContent=e.target.value||"น้องคณิต";
-    updateCustomizeDirty();
-  };
+  const nameInput=document.getElementById("cust_name");
+  nameInput.oninput=e=>{ previewCharacterName(e.target.value); updateCustomizeDirty(); };
+  nameInput.onkeydown=e=>{ if(e.key==="Enter") saveCharacter(); };
+  document.getElementById("custBotWrap").onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); playMascotGreeting(); } };
+  mascotSay(`สวัสดี เราชื่อ ${customizeOriginal.name}!`,"wave",1800);
+}
+const CHARACTER_NAMES=["น้องคณิต","เจ้ากล้า","ปุยนุ่น","ดาวน้อย","คิดเก่ง","โมจิ","น้องปัญญา","สายรุ้ง"];
+let mascotMoodTimer=0, mascotBubbleTimer=0;
+function previewCharacterName(raw,react=true){
+  const name=String(raw||"").trim()||"น้องคณิต";
+  document.getElementById("custNameText").textContent=name;
+  const count=document.getElementById("custNameCount"); if(count) count.textContent=`${String(raw||"").length}/20`;
+  if(react) mascotSay(`ชื่อนี้น่ารักจัง! 💚`,"happy",900);
+}
+function focusCharacterName(){ const input=document.getElementById("cust_name"); input.focus(); input.select(); mascotSay("ตั้งชื่อใหม่ให้เราได้เลย ✨","wave",1500); }
+function randomCharacterName(){
+  const input=document.getElementById("cust_name");
+  const current=input.value.trim(); let choices=CHARACTER_NAMES.filter(n=>n!==current);
+  input.value=choices[Math.floor(Math.random()*choices.length)];
+  previewCharacterName(input.value,false); updateCustomizeDirty(); mascotSay(`เย้! ชอบชื่อ ${input.value} มากเลย`,"happy",1700);
+}
+function playMascotGreeting(){
+  const name=document.getElementById("cust_name").value.trim()||"น้องคณิต";
+  const lines=[`สวัสดี เราชื่อ ${name}!`,`มาเรียนรู้ด้วยกันนะ 📚`,`วันนี้เก่งขึ้นอีกนิดแล้ว! ⭐`,`แตะเราอีกสิ ฮิฮิ`];
+  mascotSay(lines[Math.floor(Math.random()*lines.length)],Math.random()>.45?"wave":"happy",1600);
+}
+function mascotSay(text,mood="happy",duration=1200){
+  const wrap=document.getElementById("custBotWrap"),bubble=document.getElementById("mascotBubble"); if(!wrap||!bubble)return;
+  clearTimeout(mascotMoodTimer); clearTimeout(mascotBubbleTimer);
+  wrap.classList.remove("mascot-wave","mascot-happy","mascot-surprised");
+  void wrap.offsetWidth; wrap.classList.add(`mascot-${mood}`);
+  bubble.textContent=text; bubble.classList.add("show");
+  mascotMoodTimer=setTimeout(()=>wrap.classList.remove(`mascot-${mood}`),Math.min(duration,1400));
+  mascotBubbleTimer=setTimeout(()=>bubble.classList.remove("show"),duration);
 }
 function pickColor(c,el){
   ME._pickColor=c; applyColor(document.getElementById("custBotWrap"),c); markSwatch();
-  updateCustomizeDirty();
+  updateCustomizeDirty(); mascotSay("สีนี้เข้ากับเรามากเลย! 🎨","happy",1100);
 }
 function markSwatch(){ document.querySelectorAll("#swatches .sw").forEach(s=>
   s.classList.toggle("on", s.style.background && rgbToHex(s.style.background)===ME._pickColor)); }
@@ -1175,7 +1245,8 @@ async function saveCharacter(){
   const r=await api("saveCharacter",{username:ME.username,name,color});
   if(r.ok){
     ME={...ME,...r.user}; customizeDirty=false; customizeOriginal=null;
-    setMsg("custMsg","บันทึกแล้ว ✔","ok"); renderTop(); setTimeout(()=>showScreen("appScreen"),600);
+    setMsg("custMsg","บันทึกแล้ว ✔","ok"); mascotSay(`ขอบคุณนะ! ต่อไปเราใช้ชื่อ ${name} 💚`,"happy",1500);
+    renderTop(); setTimeout(()=>showScreen("appScreen"),1200);
   }
   else setMsg("custMsg",r.error||"บันทึกไม่สำเร็จ","err");
 }
