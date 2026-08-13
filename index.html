@@ -600,7 +600,7 @@
         <button class="btn sm" onclick="openShop()" aria-label="เปิดร้านสัตว์"><span class="wideLabel">🛒 ร้านสัตว์</span><span class="compactLabel">🛒</span></button>
       </div>
     </div>
-    <div class="hudHint"><span class="wideLabel">🕹️ ใช้ปุ่มลูกศร/WASD เดิน • แตะสัตว์เพื่อให้อาหารและแต่งตัว • เดินชนต้นไม้แล้วกด <b>Space</b></span><span class="compactLabel">👆 แตะสัตว์เพื่อแต่งตัว • เข้าใกล้ต้นไม้แล้วกด 🪓</span></div>
+    <div class="hudHint"><span class="wideLabel">🪓 ฝั่งซ้ายเป็นโซนตัดไม้ • 🏡 ฝั่งขวาเป็นที่ดินของเรา • รั้วกั้นสัตว์ได้จริง • เดินด้วยลูกศร/WASD</span><span class="compactLabel">🪓 ซ้ายตัดไม้ • 🏡 ขวาเลี้ยงสัตว์ • รั้วกั้นสัตว์ได้</span></div>
     <div class="rotateTip">📱 หมุนโทรศัพท์แนวนอน จะเห็นฟาร์มกว้างและเล่นสะดวกขึ้น</div>
     <div class="joy" id="joy">
       <button class="jb" data-k="ArrowUp">▲</button>
@@ -657,7 +657,7 @@
     <div class="helpList">
       <div class="helpItem"><span class="he">🎯</span><div><b>ทำภารกิจการเรียน</b><br><span class="muted">ทำกิจกรรม แนบภาพหลักฐาน แล้วกดรับแต้ม (วันละ 1 ครั้งต่อภารกิจ)</span></div></div>
       <div class="helpItem"><span class="he">⭐</span><div><b>สะสมแต้ม เลื่อนระดับ</b><br><span class="muted">แต้มมากขึ้น = เลื่อนระดับ และปลดล็อกเหรียญรางวัล</span></div></div>
-      <div class="helpItem"><span class="he">🌳</span><div><b>ไปเลี้ยงสัตว์ (ตัดต้นไม้)</b><br><span class="muted">เดินไปหาต้นไม้ กด Space ตอบโจทย์ให้ถูก รับเหรียญ 🪙</span></div></div>
+      <div class="helpItem"><span class="he">🌳</span><div><b>ฟาร์มแบ่งเป็น 2 โซน</b><br><span class="muted">ฝั่งซ้ายสำหรับตัดไม้ตอบโจทย์ ฝั่งขวาเป็นที่ดินสำหรับบ้าน สัตว์ และของตกแต่ง รั้วที่ซื้อจะกั้นสัตว์ไม่ให้เดินผ่าน</span></div></div>
       <div class="helpItem"><span class="he">🛒</span><div><b>ซื้อสัตว์ &amp; ของตกแต่ง</b><br><span class="muted">เอาเหรียญไปซื้อ ไก่ เป็ด หมู ปลา บ้าน รั้ว น้ำพุ ฯลฯ มาตั้งในทุ่ง</span></div></div>
       <div class="helpItem"><span class="he">🏆</span><div><b>ดูอันดับในห้อง</b><br><span class="muted">แข่งสะสมแต้มกับเพื่อน ๆ ในห้องเดียวกัน</span></div></div>
       <div class="helpItem"><span class="he">🎨</span><div><b>ปรับแต่งหุ่นยนต์</b><br><span class="muted">เปลี่ยนสีและตั้งชื่อเจ้าหุ่นของหนูเองได้</span></div></div>
@@ -1332,6 +1332,8 @@ let QUESTIONS=[], curTree=null, qOpen=false;
 let farmActive=false, farmRAF=0, farmT=0, farmInit=false;
 const HORIZON=150;                                  // เส้นขอบฟ้า
 const FIELD={x0:34,y0:206,x1:866,y1:566};           // ขอบเขตทุ่งที่เดินได้ (กว้าง)
+const WOOD_ZONE={x0:42,y0:218,x1:414,y1:556};       // ฝั่งซ้าย: ตัดไม้และตอบโจทย์
+const HOME_ZONE={x0:480,y0:218,x1:858,y1:556};      // ฝั่งขวา: บ้าน สัตว์ และของตกแต่ง
 const POND={cx:660,cy:480,rx:170,ry:74};
 let trees=[], animals=[], decors=[], player=null, playerImg=null, playerKey="", clouds=null, tufts=null, butterflies=null;
 let farmDirty=false, savedFarmState=null;
@@ -1377,6 +1379,9 @@ function ellipsePt(cx,cy,rx,ry){ const t=Math.random()*6.283,r=Math.sqrt(Math.ra
   return {x:cx+Math.cos(t)*rx*r, y:cy+Math.sin(t)*ry*r}; }
 function fieldPt(){ return {x:FIELD.x0+Math.random()*(FIELD.x1-FIELD.x0), y:FIELD.y0+Math.random()*(FIELD.y1-FIELD.y0)}; }
 function clampField(o){ o.x=Math.max(FIELD.x0,Math.min(FIELD.x1,o.x)); o.y=Math.max(FIELD.y0,Math.min(FIELD.y1,o.y)); }
+function insideZone(o,z,margin=0){ return o.x>=z.x0+margin&&o.x<=z.x1-margin&&o.y>=z.y0+margin&&o.y<=z.y1-margin; }
+function insidePond(o,margin=0){ const dx=(o.x-POND.cx)/(POND.rx+margin),dy=(o.y-POND.cy)/(POND.ry+margin);return dx*dx+dy*dy<1; }
+function homePt(){ return {x:HOME_ZONE.x0+16+Math.random()*(HOME_ZONE.x1-HOME_ZONE.x0-32),y:HOME_ZONE.y0+16+Math.random()*(HOME_ZONE.y1-HOME_ZONE.y0-32)}; }
 function depth(y){ return 0.74 + (y-FIELD.y0)/(FIELD.y1-FIELD.y0)*0.5; }   // ไกล=เล็ก ใกล้=ใหญ่
 
 function buildRobot(){ if(playerKey===ME.color && playerImg) return;
@@ -1384,25 +1389,36 @@ function buildRobot(){ if(playerKey===ME.color && playerImg) return;
   img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(robotSVG(c,cd,"#5ef2c6"));
   playerImg=img; playerKey=ME.color; }
 
-const TREESPOTS=[[110,250],[250,225],[430,240],[620,225],[800,255],
-                 [150,400],[340,370],[520,410],[700,360],[850,420]];
+const TREESPOTS=[[88,260],[190,238],[310,265],[390,330],[105,390],
+                 [225,360],[345,430],[120,515],[270,510],[395,535]];
 function spawnTrees(saved){
-  const spots=Array.isArray(saved)&&saved.length ? saved.map(t=>[Number(t.x),Number(t.y)]) : TREESPOTS;
-  trees=spots.slice(0,20).map(pos=>{ const t={x:pos[0],y:pos[1]}; clampField(t);
-    return {x:t.x,y:t.y,alive:true,regrow:0,q:null}; });
+  const savedSpots=Array.isArray(saved)?saved.map(t=>[Number(t.x),Number(t.y)]):[];
+  const savedFits=savedSpots.length&&savedSpots.every(([x,y])=>insideZone({x,y},WOOD_ZONE,8));
+  const spots=savedFits?savedSpots:TREESPOTS;
+  trees=spots.slice(0,20).map(([x,y])=>({x,y,alive:true,regrow:0,q:null}));
 }
+function fenceSpot(i){
+  if(i<8)return {x:452,y:238+i*43,orientation:"vertical"};
+  if(i<17)return {x:500+(i-8)*43,y:220,orientation:"horizontal"};
+  return {x:500+((i-17)%9)*43,y:554,orientation:"horizontal"};
+}
+function fenceBounds(d,pad=0){ return d.orientation==="vertical"
+  ?{x0:d.x-9-pad,x1:d.x+9+pad,y0:d.y-24-pad,y1:d.y+24+pad}
+  :{x0:d.x-24-pad,x1:d.x+24+pad,y0:d.y-9-pad,y1:d.y+9+pad}; }
+function blockedByFence(x,y,pad=0){ return decors.some(d=>{if(d.type!=="fence")return false;const b=fenceBounds(d,pad);return x>=b.x0&&x<=b.x1&&y>=b.y0&&y<=b.y1;}); }
+function animalHomePt(){ for(let i=0;i<40;i++){const p=homePt();if(!insidePond(p,20)&&!blockedByFence(p.x,p.y,10))return p;}return {x:560,y:390}; }
 function makeAnimal(type,key){ const fish=type==="fish";
-  const p=fish?ellipsePt(POND.cx,POND.cy,POND.rx-14,POND.ry-9):fieldPt();
+  const p=fish?ellipsePt(POND.cx,POND.cy,POND.rx-14,POND.ry-9):animalHomePt();
   return {type,key,emoji:(PETS.find(x=>x.id===type)||{emoji:"🐔"}).emoji,x:p.x,y:p.y,tx:p.x,ty:p.y,
     pause:Math.random()*100,spd:.45+Math.random()*.4,fish,dir:1}; }
 function loadAnimals(){ animals=[]; Object.entries(ME.pets||{}).forEach(([t,n])=>{
   for(let i=0;i<(n||0);i++) animals.push(makeAnimal(t,`${t}:${i}`)); }); }
 function loadDecor(){ decors=[]; const d=ME.decor||{};
-  for(let i=0;i<(d.house||0);i++)    decors.push({type:"house",   x:120+i*180, y:300});
-  for(let i=0;i<(d.fountain||0);i++) decors.push({type:"fountain",x:430+i*120, y:300});
-  for(let i=0;i<(d.statue||0);i++)   decors.push({type:"statue",  x:840,       y:280+i*80});
-  for(let i=0;i<(d.flower||0);i++)   decors.push({type:"flower",  x:70+i*90,   y:552});
-  for(let i=0;i<(d.fence||0);i++)    decors.push({type:"fence",   x:60+i*44,   y:236}); }
+  for(let i=0;i<(d.house||0);i++)    decors.push({type:"house",   x:540+i*125, y:305});
+  for(let i=0;i<(d.fountain||0);i++) decors.push({type:"fountain",x:735+i*90,  y:330});
+  for(let i=0;i<(d.statue||0);i++)   decors.push({type:"statue",  x:825,       y:390+i*70});
+  for(let i=0;i<(d.flower||0);i++)   decors.push({type:"flower",  x:510+i*58,  y:540});
+  for(let i=0;i<(d.fence||0);i++)    decors.push({type:"fence",...fenceSpot(i)}); }
 
 async function openFarm(){
   savedFarmState=null;
@@ -1424,7 +1440,7 @@ async function openFarm(){
   const savedPlayer=savedFarmState&&savedFarmState.player?savedFarmState.player:{x:450,y:500};
   player={x:Number(savedPlayer.x)||450,y:Number(savedPlayer.y)||500,tx:null,ty:null,dir:1,pend:-1};
   clampField(player);
-  spawnTrees(savedFarmState&&savedFarmState.trees); loadAnimals(); loadDecor(); initFarmInput();
+  spawnTrees(savedFarmState&&savedFarmState.trees); loadDecor(); loadAnimals(); initFarmInput();
   sessionChops=0; sessionStartCoins=ME.coins||0;
   farmDirty=false; updateFarmSaveButton();
   farmActive=true; farmT=0; if(!farmRAF) farmLoop();
@@ -1438,7 +1454,7 @@ function exitFarm(){
   if(sessionChops>0) setTimeout(()=>toast(`รอบนี้: ตัดไม้ ${sessionChops} ต้น · ได้ ${earned} 🪙`,2600,"#37c26b","#04210f"),250);
 }
 function farmSnapshot(){
-  return {version:2,player:{x:Math.round(player.x),y:Math.round(player.y)},subject:currentSubject||"",
+  return {version:3,player:{x:Math.round(player.x),y:Math.round(player.y)},subject:currentSubject||"",
     questionCycles,
     trees:trees.map(t=>({x:Math.round(t.x),y:Math.round(t.y)}))};
 }
@@ -1509,9 +1525,13 @@ function stepPlayer(){
 }
 function stepAnimal(a){ if(a.pause>0){a.pause--;return;}
   const dx=a.tx-a.x,dy=a.ty-a.y,d=Math.hypot(dx,dy);
-  if(d>3){ a.x+=dx/d*a.spd; a.y+=dy/d*a.spd; if(Math.abs(dx)>.3)a.dir=dx<0?-1:1; }
+  if(d>3){ const nx=a.x+dx/d*a.spd,ny=a.y+dy/d*a.spd;
+    if(!a.fish&&(!insideZone({x:nx,y:ny},HOME_ZONE,5)||insidePond({x:nx,y:ny},10)||blockedByFence(nx,ny,8))){
+      const p=animalHomePt();a.tx=p.x;a.ty=p.y;a.pause=25+Math.random()*45;return;
+    }
+    a.x=nx;a.y=ny;if(Math.abs(dx)>.3)a.dir=dx<0?-1:1; }
   else { a.pause=40+Math.random()*140;
-    const p=a.fish?ellipsePt(POND.cx,POND.cy,POND.rx-14,POND.ry-9):fieldPt();
+    const p=a.fish?ellipsePt(POND.cx,POND.cy,POND.rx-14,POND.ry-9):animalHomePt();
     a.tx=p.x; a.ty=p.y; } }
 
 /* ---- question ---- */
@@ -1672,9 +1692,22 @@ function drawField(x,W,H){
   tufts.forEach(t=>{const s=.75+(t.y-HORIZON)/(H-HORIZON)*.55;x.strokeStyle="rgba(42,126,54,.48)";x.lineWidth=1.6*s;x.beginPath();x.moveTo(t.x,t.y);x.quadraticCurveTo(t.x-1,t.y-6*s,t.x-4*s,t.y-9*s);x.moveTo(t.x,t.y);x.quadraticCurveTo(t.x+1,t.y-7*s,t.x+4*s,t.y-10*s);x.stroke();if(t.flower){x.fillStyle=t.col;for(let j=0;j<4;j++){const a=j*Math.PI/2;el(x,t.x+Math.cos(a)*2.4*s,t.y-10*s+Math.sin(a)*2.4*s,2.2*s,2.2*s);x.fill();}x.fillStyle="#f5b735";el(x,t.x,t.y-10*s,1.4*s,1.4*s);x.fill();}});
   drawPond(x);drawButterflies(x);
 }
+function drawZoneLayout(x){
+  x.save();
+  x.fillStyle="rgba(82,128,49,.13)";rr(x,WOOD_ZONE.x0,WOOD_ZONE.y0,WOOD_ZONE.x1-WOOD_ZONE.x0,WOOD_ZONE.y1-WOOD_ZONE.y0,24);x.fill();
+  x.strokeStyle="rgba(63,108,42,.5)";x.lineWidth=2;x.setLineDash([9,8]);x.stroke();
+  x.fillStyle="rgba(255,226,134,.12)";rr(x,HOME_ZONE.x0,HOME_ZONE.y0,HOME_ZONE.x1-HOME_ZONE.x0,HOME_ZONE.y1-HOME_ZONE.y0,24);x.fill();
+  x.strokeStyle="rgba(170,112,44,.5)";x.stroke();x.setLineDash([]);
+  const badge=(cx,text,bg)=>{x.font="800 17px 'Mali',sans-serif";x.textAlign="center";const w=x.measureText(text).width+26;
+    x.fillStyle="rgba(255,255,255,.9)";rr(x,cx-w/2,181,w,32,16);x.fill();x.strokeStyle=bg;x.lineWidth=2;x.stroke();x.fillStyle=bg;x.textBaseline="middle";x.fillText(text,cx,197);};
+  badge((WOOD_ZONE.x0+WOOD_ZONE.x1)/2,"🪓 โซนตัดไม้","#39733b");
+  badge((HOME_ZONE.x0+HOME_ZONE.x1)/2,"🏡 ที่ดินของเรา","#9b632d");
+  x.fillStyle="rgba(107,77,42,.3)";for(let y=226;y<558;y+=28){rr(x,438,y,28,12,6);x.fill();}
+  x.restore();
+}
 function drawFarm(){ const c=document.getElementById("island"); if(!c) return; const x=c.getContext("2d");
   const W=c.width,H=c.height; x.clearRect(0,0,W,H);
-  drawField(x,W,H);
+  drawField(x,W,H);drawZoneLayout(x);
   let hint=-1,best=80; if(player) trees.forEach((t,i)=>{ if(!t.alive)return; const d=Math.hypot(t.x-player.x,t.y-player.y); if(d<best){best=d;hint=i;} });
   const ents=[];
   decors.forEach(d=>ents.push({y:d.y,f:()=>drawDecor(x,d)}));
@@ -1696,7 +1729,7 @@ function updateFarmCamera(c){
   c.style.setProperty("--farm-camera-x",`${shift.toFixed(1)}px`);
 }
 function drawDecor(x,d){ const s=depth(d.y); x.save(); x.translate(d.x,d.y);
-  if(d.type==="house") drawHouse(x,s); else if(d.type==="fence") drawFence(x,s);
+  if(d.type==="house") drawHouse(x,s); else if(d.type==="fence") drawFence(x,s,d.orientation);
   else if(d.type==="fountain") drawFountain(x,s); else if(d.type==="statue") drawStatue(x,s);
   else drawFlower(x,s); x.restore(); }
 function drawHouse(x,s){ const w=70*s,h=48*s,bx=-w/2,by=-h;
@@ -1710,7 +1743,7 @@ function drawHouse(x,s){ const w=70*s,h=48*s,bx=-w/2,by=-h;
   x.fillStyle="#bfe6ff"; x.fillRect(bx+10*s,by+12*s,15*s,15*s);
   x.strokeStyle="#fff"; x.lineWidth=2*s; x.strokeRect(bx+10*s,by+12*s,15*s,15*s);
   x.beginPath(); x.moveTo(bx+17.5*s,by+12*s); x.lineTo(bx+17.5*s,by+27*s); x.moveTo(bx+10*s,by+19.5*s); x.lineTo(bx+25*s,by+19.5*s); x.stroke(); }
-function drawFence(x,s){ const w=46*s;
+function drawFence(x,s,orientation){ if(orientation==="vertical")x.rotate(Math.PI/2);const w=46*s;
   x.fillStyle="rgba(0,0,0,.14)"; el(x,0,0,w*0.5,5*s); x.fill();
   x.fillStyle="#c58b4e";
   [-w*0.36,w*0.36].forEach(px=>{ x.fillRect(px-3*s,-32*s,6*s,32*s);
