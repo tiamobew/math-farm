@@ -150,7 +150,13 @@
   #farmScreen.active{display:flex;flex-direction:column;min-height:100vh}
   .islandStage{position:relative;flex:1;display:flex;align-items:center;justify-content:center;
     background:radial-gradient(circle at 82% 8%,#fff6b7 0 4%,transparent 18%),linear-gradient(#76c8ff,#dff6ff 47%,#bde98d);overflow:hidden}
-  #island{width:100%;max-width:1000px;height:auto;aspect-ratio:3/2;display:block;touch-action:none}
+  #island,#farm3d{width:100%;max-width:1000px;height:auto;aspect-ratio:3/2;display:block;touch-action:none}
+  #farm3d{position:absolute;left:50%;top:50%;z-index:0;pointer-events:none;opacity:0;visibility:hidden;
+    transform:translate(-50%,-50%);
+    transition:opacity .28s ease;filter:saturate(1.08) contrast(1.02)}
+  .islandStage.mode3d #farm3d{opacity:1;visibility:visible}
+  .islandStage.mode3d #island{opacity:0}
+  #viewModeBtn[disabled]{opacity:.58;cursor:not-allowed}
   .hudTop{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;
     align-items:center;gap:10px;pointer-events:none;z-index:4}
   .hudTop>*{pointer-events:auto}
@@ -237,8 +243,9 @@
     .islandStage{min-height:0;height:100%;padding:0;isolation:isolate;background:#9bdcff}
     .islandStage::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
       background:linear-gradient(180deg,rgba(37,117,163,.14),transparent 18%,transparent 76%,rgba(29,97,56,.12))}
-    #island{position:relative;z-index:0;width:auto;height:100%;max-width:none;min-width:100%;flex:none;
+    #island,#farm3d{position:relative;z-index:0;width:auto;height:100%;max-width:none;min-width:100%;flex:none;
       transform:translateX(var(--farm-camera-x,0px));transition:transform .12s ease-out;will-change:transform}
+    #farm3d{position:absolute;left:50%;top:0;transform:translateX(calc(-50% + var(--farm-camera-x,0px)))}
     .hudTop{top:max(6px,env(safe-area-inset-top));left:6px;right:6px;display:flex;
       flex-direction:column;align-items:stretch;gap:6px;z-index:5}
     .hudGroup{gap:5px;flex-wrap:nowrap}
@@ -586,6 +593,7 @@
 <section id="farmScreen" class="screen">
   <div class="islandStage">
     <canvas id="island" width="900" height="600"></canvas>
+    <canvas id="farm3d" width="900" height="600" aria-hidden="true"></canvas>
     <div class="farmBrand"><span>🌿</span> ฟาร์มแห่งการเรียนรู้ <span>✨</span></div>
     <div class="hudTop">
       <div class="hudGroup">
@@ -595,6 +603,7 @@
       <div class="hudGroup">
         <span class="coinChip">🪙 <span id="coinCount">0</span></span>
         <span class="coinChip" title="อาหารสัตว์">🥕 <span id="foodCount">0</span></span>
+        <button class="btn ghost sm" id="viewModeBtn" onclick="toggleFarmView()" title="สลับมุมมองฟาร์ม 2D และ 3D" aria-label="สลับมุมมองฟาร์ม" disabled><span class="wideLabel">🧊 3D</span><span class="compactLabel">3D</span></button>
         <button class="btn ghost sm" id="saveFarmBtn" onclick="saveFarmState()" aria-label="บันทึกฟาร์ม"><span class="wideLabel">💾 บันทึกฟาร์ม</span><span class="compactLabel">💾</span></button>
         <button class="btn ghost sm" id="muteBtn2" onclick="toggleSound()" title="เปิด/ปิดเสียง">🔊</button>
         <button class="btn sm" onclick="openShop()" aria-label="เปิดร้านสัตว์"><span class="wideLabel">🛒 ร้านสัตว์</span><span class="compactLabel">🛒</span></button>
@@ -1339,6 +1348,20 @@ let trees=[], animals=[], decors=[], player=null, playerImg=null, playerKey="", 
 let farmDirty=false, savedFarmState=null;
 let sessionChops=0, sessionStartCoins=0;   // สรุปผลรอบการเล่น
 const keys={};
+const reduceFarmMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function farm3DState(){
+  return {active:farmActive,t:farmT,player:player?{x:player.x,y:player.y,dir:player.dir,color:ME?.color||"#4a90ff"}:null,
+    trees:trees.map((o,i)=>({id:i,x:o.x,y:o.y,alive:o.alive})),
+    animals:animals.map(o=>({key:o.key,type:o.type,x:o.x,y:o.y,dir:o.dir,phase:o.phase,
+      accessory:ME?.petStyles?.[o.key]||""})),
+    decors:decors.map((o,i)=>({id:i,...o})),pond:{...POND},woodZone:{...WOOD_ZONE},homeZone:{...HOME_ZONE}};
+}
+window.getMathFarm3DState=farm3DState;
+function toggleFarmView(){
+  if(!window.MathFarm3D?.available){ toast("เครื่องนี้ยังใช้มุมมอง 3D ไม่ได้ จึงแสดงแบบ 2D ต่อ",2200,"#ffd36a","#392400"); return; }
+  window.MathFarm3D.toggle();
+}
 
 /* สุ่มโจทย์แบบ shuffle-bag + บันทึกรอบที่ใช้แล้ว: ไม่ซ้ำจนกว่าจะครบคลัง แม้รีโหลดหน้า */
 let qBag=[], lastQId=null, currentSubject="", questionCycles={};
@@ -1411,7 +1434,8 @@ function animalHomePt(){ for(let i=0;i<40;i++){const p=homePt();if(!insidePond(p
 function makeAnimal(type,key){ const fish=type==="fish";
   const p=fish?pondPt():animalHomePt();
   return {type,key,emoji:(PETS.find(x=>x.id===type)||{emoji:"🐔"}).emoji,x:p.x,y:p.y,tx:p.x,ty:p.y,
-    pause:Math.random()*100,spd:.45+Math.random()*.4,fish,dir:1}; }
+    pause:Math.random()*100,spd:.45+Math.random()*.4,fish,dir:1,phase:Math.random()*6.283,
+    nextCute:180+Math.random()*420,cuteUntil:0,cuteKind:Math.random()<.55?"heart":"sparkle"}; }
 function loadAnimals(){ animals=[]; Object.entries(ME.pets||{}).forEach(([t,n])=>{
   for(let i=0;i<(n||0);i++) animals.push(makeAnimal(t,`${t}:${i}`)); }); }
 function loadDecor(){ decors=[]; const d=ME.decor||{};
@@ -1444,12 +1468,12 @@ async function openFarm(){
   spawnTrees(savedFarmState&&savedFarmState.trees); loadDecor(); loadAnimals(); initFarmInput();
   sessionChops=0; sessionStartCoins=ME.coins||0;
   farmDirty=false; updateFarmSaveButton();
-  farmActive=true; farmT=0; if(!farmRAF) farmLoop();
+  farmActive=true; farmT=0; window.MathFarm3D?.enterFarm(); if(!farmRAF) farmLoop();
 }
 function exitFarm(){
   if(farmDirty &&
     !confirm("ยังไม่ได้บันทึกฟาร์ม หากกลับตอนนี้ระบบจะใช้ข้อมูลที่บันทึกเดิม ต้องการกลับโดยไม่บันทึกหรือไม่?")) return;
-  farmDirty=false; farmActive=false; if(farmRAF){cancelAnimationFrame(farmRAF);farmRAF=0;}
+  farmDirty=false; farmActive=false; window.MathFarm3D?.leaveFarm(); if(farmRAF){cancelAnimationFrame(farmRAF);farmRAF=0;}
   const earned=(ME.coins||0)-sessionStartCoins;
   showScreen("appScreen");
   if(sessionChops>0) setTimeout(()=>toast(`รอบนี้: ตัดไม้ ${sessionChops} ต้น · ได้ ${earned} 🪙`,2600,"#37c26b","#04210f"),250);
@@ -1525,6 +1549,7 @@ function stepPlayer(){
   clampField(player);
 }
 function stepAnimal(a){ if(a.pause>0){a.pause--;return;}
+  if(!reduceFarmMotion&&farmT>=a.nextCute){a.cuteUntil=farmT+80;a.nextCute=farmT+320+Math.random()*520;a.cuteKind=Math.random()<.6?"heart":"sparkle";}
   const dx=a.tx-a.x,dy=a.ty-a.y,d=Math.hypot(dx,dy);
   if(d>3){ const nx=a.x+dx/d*a.spd,ny=a.y+dy/d*a.spd;
     if(!a.fish&&(!insideZone({x:nx,y:ny},HOME_ZONE,5)||insidePond({x:nx,y:ny},10)||blockedByFence(nx,ny,8))){
@@ -1628,7 +1653,10 @@ function farmLoop(){ if(!farmActive){farmRAF=0;return;} farmT++;
   trees.forEach(t=>{ if(!t.alive && farmT>=t.regrow){ t.alive=true; t.q=null; } });
   if(animals.length && --animalTimer<=0){ animalTimer=200+Math.random()*280;
     Sound.animal(animals[(Math.random()*animals.length)|0].type); }
-  drawFarm(); farmRAF=requestAnimationFrame(farmLoop); }
+  if(window.MathFarm3D?.isActive()){
+    const farmCanvas=document.getElementById("island"); updateFarmCamera(farmCanvas); window.MathFarm3D.render(farm3DState());
+  } else drawFarm();
+  farmRAF=requestAnimationFrame(farmLoop); }
 function el(x,cx,cy,rx,ry){ x.beginPath(); x.ellipse(cx,cy,rx,ry,0,0,6.2832); }
 function shadow(x,cx,cy,rx){ x.fillStyle="rgba(0,0,0,.16)"; el(x,cx,cy,rx,rx*0.42); x.fill(); }
 function drawClouds(x,W){ if(!clouds){ clouds=[]; for(let i=0;i<6;i++) clouds.push({x:Math.random()*W,y:24+Math.random()*115,s:16+Math.random()*23,v:.12+Math.random()*.22}); }
@@ -1676,6 +1704,8 @@ function drawPond(x){
   x.restore();
   [[POND.x+62,POND.y+30,1],[POND.x+235,POND.y+49,-1],[POND.x+150,POND.y+79,1]].forEach(([px,py,dir],i)=>{x.fillStyle=i===1?"#4fae58":"#65bf62";el(x,px,py,18,7);x.fill();x.fillStyle="#ff8fbb";el(x,px+dir*3,py-4,4,4);x.fill();x.fillStyle="#ffd65c";el(x,px+dir*3,py-4,1.5,1.5);x.fill();});
   x.strokeStyle="#4a984c";x.lineWidth=3;[POND.x+7,POND.x+POND.w-7].forEach((px,side)=>{for(let i=0;i<4;i++){const dir=side?-1:1;x.beginPath();x.moveTo(px,POND.y+POND.h-8+i*2);x.quadraticCurveTo(px+dir*6,POND.y+POND.h-38,px+dir*3,POND.y+18-i*3);x.stroke();}});
+  if(!reduceFarmMotion){for(let i=0;i<7;i++){const life=(farmT*.7+i*31)%95,px=POND.x+32+(i*47)%270,py=POND.y+POND.h-8-life*.78,r=1.8+(i%3);
+    if(py>POND.y+8){x.strokeStyle=`rgba(255,255,255,${.2+(1-life/95)*.5})`;x.lineWidth=1.4;el(x,px+Math.sin(farmT*.04+i)*5,py,r,r);x.stroke();}}}
 }
 function drawButterflies(x){
   if(!butterflies)butterflies=[{x:205,y:320,c:"#ff7fb7",p:.1},{x:745,y:315,c:"#ffd34e",p:2.1},{x:550,y:235,c:"#9270ff",p:4.2}];
@@ -1720,14 +1750,17 @@ function drawFarm(){ const c=document.getElementById("island"); if(!c) return; c
   updateFarmCamera(c);
 }
 function updateFarmCamera(c){
-  if(!player||!matchMedia("(max-width:759px) and (orientation:portrait)").matches){c.style.removeProperty("--farm-camera-x");return;}
+  const c3=document.getElementById("farm3d");
+  const setShift=v=>{c.style.setProperty("--farm-camera-x",v);if(c3)c3.style.setProperty("--farm-camera-x",v);};
+  const clearShift=()=>{c.style.removeProperty("--farm-camera-x");if(c3)c3.style.removeProperty("--farm-camera-x");};
+  if(!player||!matchMedia("(max-width:759px) and (orientation:portrait)").matches){clearShift();return;}
   const stage=c.parentElement,renderedWidth=c.offsetWidth,stageWidth=stage.clientWidth;
-  if(renderedWidth<=stageWidth){c.style.setProperty("--farm-camera-x","0px");return;}
+  if(renderedWidth<=stageWidth){setShift("0px");return;}
   const overflow=(renderedWidth-stageWidth)/2,scale=renderedWidth/c.width;
   const basePlayerX=(stageWidth-renderedWidth)/2+player.x*scale;
   const desired=stageWidth*.53-basePlayerX;
   const shift=Math.max(-overflow,Math.min(overflow,desired));
-  c.style.setProperty("--farm-camera-x",`${shift.toFixed(1)}px`);
+  setShift(`${shift.toFixed(1)}px`);
 }
 function drawDecor(x,d){ const s=depth(d.y); x.save(); x.translate(d.x,d.y);
   if(d.type==="house") drawHouse(x,s); else if(d.type==="fence") drawFence(x,s,d.orientation);
@@ -1801,12 +1834,22 @@ function drawTree(x,t,hi){ const s=depth(t.y), tx=t.x, ty=t.y;
   if(hi){ x.font=`${Math.round(30*s)}px serif`; x.textAlign="center"; x.textBaseline="alphabetic";
     x.fillText("🪓",tx+R+8*s,fy-Math.sin(farmT/6)*3); } }
 function drawAnimal(x,a){ const s=depth(a.y), mv=a.pause<=0;
-  x.save(); x.translate(a.x,a.y); x.scale(s,s); if(a.dir<0)x.scale(-1,1);
+  const bounce=reduceFarmMotion?0:mv?Math.sin(farmT*.28+a.phase)*1.25:Math.sin(farmT*.045+a.phase)*.55;
+  const squash=reduceFarmMotion?1:mv?1+Math.sin(farmT*.28+a.phase)*.025:1;
+  x.save(); x.translate(a.x,a.y+bounce); x.scale(s/squash,s*squash); if(a.dir<0)x.scale(-1,1);
   const accessory=PET_ACCESSORIES.find(it=>it.id===(ME.petStyles?.[a.key]||""));
   if(a.type!=="fish"){ x.fillStyle="rgba(66,44,28,.2)"; el(x,0,1,a.type==="cow"?22:a.type==="pug"?19:17,5); x.fill(); }
   if(accessory?.id==="bag")drawPetWear(x,a.type,accessory);
   drawPetByType(x,a.type,mv,accessory?.color);
   if(accessory?.id!=="bag")drawPetWear(x,a.type,accessory);
+  drawCutePetMood(x,a);
+  x.restore(); }
+function drawCutePetMood(x,a){ if(reduceFarmMotion||farmT>=a.cuteUntil)return;
+  const age=80-(a.cuteUntil-farmT),rise=age*.16,alpha=Math.max(0,1-age/80),symbol=a.cuteKind==="heart"?"♥":"✦";
+  x.save();x.scale(a.dir<0?-1:1,1);x.globalAlpha=alpha;x.fillStyle=a.cuteKind==="heart"?"#ff6f9d":"#ffd84f";
+  x.strokeStyle="rgba(255,255,255,.9)";x.lineWidth=2;x.font=`900 ${a.fish?11:13}px sans-serif`;x.textAlign="center";x.textBaseline="middle";
+  const px=a.fish?-8:-16,py=(a.fish?-15:-45)-rise;x.strokeText(symbol,px,py);x.fillText(symbol,px,py);
+  if(a.cuteKind==="sparkle"){x.globalAlpha=alpha*.8;x.font="900 8px sans-serif";x.fillText("✦",px+10,py+8);}
   x.restore(); }
 function shadeColor(hex,factor=.7){ const h=String(hex||"").replace("#",""); if(!/^[0-9a-f]{6}$/i.test(h))return hex;
   return "#"+[0,2,4].map(i=>Math.max(0,Math.min(255,Math.round(parseInt(h.slice(i,i+2),16)*factor))).toString(16).padStart(2,"0")).join(""); }
@@ -1909,5 +1952,6 @@ addEventListener("beforeunload",e=>{
   if(s && (!CONFIG.GAS_URL || token)){ const r=await api("getProfile",{username:s}); if(r.ok){ ME=r.user; enterApp(); } }
 })();
 </script>
+<script type="module" src="./farm-3d.js?v=20260813-three-1851"></script>
 </body>
 </html>
