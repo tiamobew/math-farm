@@ -154,7 +154,7 @@
   #farm3d{position:absolute;left:50%;top:50%;z-index:0;pointer-events:none;opacity:0;visibility:hidden;
     transform:translate(-50%,-50%);
     transition:opacity .28s ease;filter:saturate(1.08) contrast(1.02)}
-  .islandStage.mode3d #farm3d{opacity:1;visibility:visible}
+  .islandStage.mode3d #farm3d{opacity:1;visibility:visible;pointer-events:auto;cursor:pointer}
   .islandStage.mode3d #island{opacity:0}
   #viewModeBtn[disabled]{opacity:.58;cursor:not-allowed}
   .hudTop{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;
@@ -1351,13 +1351,24 @@ const keys={};
 const reduceFarmMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function farm3DState(){
-  return {active:farmActive,t:farmT,player:player?{x:player.x,y:player.y,dir:player.dir,color:ME?.color||"#4a90ff"}:null,
+  return {active:farmActive,t:farmT,player:player?{x:player.x,y:player.y,dir:player.dir,color:ME?.color||"#4a90ff",
+      tx:player.tx,ty:player.ty,pend:player.pend}:null,
     trees:trees.map((o,i)=>({id:i,x:o.x,y:o.y,alive:o.alive})),
     animals:animals.map(o=>({key:o.key,type:o.type,x:o.x,y:o.y,dir:o.dir,phase:o.phase,
-      accessory:ME?.petStyles?.[o.key]||""})),
+      accessory:ME?.petStyles?.[o.key]||"",cuteUntil:o.cuteUntil||0,cuteKind:o.cuteKind||"heart"})),
     decors:decors.map((o,i)=>({id:i,...o})),pond:{...POND},woodZone:{...WOOD_ZONE},homeZone:{...HOME_ZONE}};
 }
 window.getMathFarm3DState=farm3DState;
+window.handleMathFarm3DAction=({x,y,animalKey,treeId}={})=>{
+  if(!farmActive||qOpen||!player)return;
+  Sound.resume();
+  if(animalKey){const index=animals.findIndex(a=>a.key===animalKey);if(index>=0){Sound.animal(animals[index].type);openPetCare(index);}return;}
+  if(Number.isInteger(treeId)&&trees[treeId]?.alive){player.tx=trees[treeId].x;player.ty=trees[treeId].y+30;player.pend=treeId;return;}
+  const point={x:Number(x)||player.x,y:Number(y)||player.y};clampField(point);
+  let hit=-1,best=52;trees.forEach((t,i)=>{if(!t.alive)return;const d=Math.hypot(t.x-point.x,t.y-point.y);if(d<best){best=d;hit=i;}});
+  if(hit>=0){player.tx=trees[hit].x;player.ty=trees[hit].y+30;player.pend=hit;}
+  else{player.tx=point.x;player.ty=point.y;player.pend=-1;}
+};
 function toggleFarmView(){
   if(!window.MathFarm3D?.available){ toast("เครื่องนี้ยังใช้มุมมอง 3D ไม่ได้ จึงแสดงแบบ 2D ต่อ",2200,"#ffd36a","#392400"); return; }
   window.MathFarm3D.toggle();
@@ -1952,6 +1963,6 @@ addEventListener("beforeunload",e=>{
   if(s && (!CONFIG.GAS_URL || token)){ const r=await api("getProfile",{username:s}); if(r.ok){ ME=r.user; enterApp(); } }
 })();
 </script>
-<script type="module" src="./farm-3d.js?v=20260813-three-1851"></script>
+<script type="module" src="./farm-3d.js?v=20260813-three-feedback"></script>
 </body>
 </html>
