@@ -746,6 +746,8 @@ const Sound=(function(){
     if(type==="chicken"){ tone(950,0.06,"square",0.22,t); tone(1250,0.05,"square",0.2,t+0.09); tone(780,0.09,"square",0.18,t+0.17); }
     else if(type==="duck"){ tone(330,0.14,"sawtooth",0.26,t,250); tone(300,0.12,"sawtooth",0.22,t+0.16,230); }
     else if(type==="pig"){ tone(180,0.13,"sawtooth",0.3,t,110); noise(0.09,0.12,t+0.05); tone(150,0.11,"sawtooth",0.26,t+0.15,100); }
+    else if(type==="cow"){ tone(145,0.22,"sawtooth",0.24,t,95); tone(125,0.28,"sawtooth",0.2,t+0.18,80); }
+    else if(type==="pug"){ tone(480,0.08,"square",0.2,t); tone(620,0.08,"square",0.18,t+0.1); tone(410,0.1,"square",0.16,t+0.2); }
     else { tone(520,0.05,"sine",0.14,t); tone(360,0.05,"sine",0.12,t+0.07); } }
   const MEL=[523,587,659,784,659,587,523,587,659,659,784,880,784,659,587,523];
   function bgmLoop(){ if(!ctx||muted||!bgmOn)return; const beat=0.34; let t=ctx.currentTime+0.06;
@@ -866,6 +868,8 @@ let PETS=[
   {id:"duck",   name:"เป็ด",emoji:"🦆",price:800},
   {id:"fish",   name:"ปลา",emoji:"🐟",price:1000},
   {id:"pig",    name:"หมู",emoji:"🐷",price:1500},
+  {id:"cow",    name:"วัว",emoji:"🐄",price:2000},
+  {id:"pug",    name:"สุนัขปั๊ก",emoji:"🐶",price:2500},
 ];
 /* ---------- ของตกแต่ง/สิ่งปลูกสร้าง (ราคาแพง) ---------- */
 let DECOR=[
@@ -1031,7 +1035,7 @@ function offlineApi(action,p){
       return {ok:true,coins:u.coins,petFood:u.petFood,petStyles:u.petStyles||{}}; }
     case "feedPet":{
       const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
-      const m=String(p.petKey||"").match(/^(chicken|duck|fish|pig):(\d+)$/);
+      const m=String(p.petKey||"").match(/^(chicken|duck|fish|pig|cow|pug):(\d+)$/);
       if(!m || Number(m[2])>=(u.pets?.[m[1]]||0)) return {ok:false,error:"ไม่พบสัตว์ตัวนี้"};
       if(!PET_ACCESSORIES.some(x=>x.id===p.accessory)) return {ok:false,error:"ของตกแต่งไม่ถูกต้อง"};
       if((u.petFood||0)<1) return {ok:false,error:"อาหารสัตว์หมดแล้ว"};
@@ -1765,60 +1769,71 @@ function drawTree(x,t,hi){ const s=depth(t.y), tx=t.x, ty=t.y;
 function drawAnimal(x,a){ const s=depth(a.y), mv=a.pause<=0;
   x.save(); x.translate(a.x,a.y); x.scale(s,s); if(a.dir<0)x.scale(-1,1);
   const accessory=PET_ACCESSORIES.find(it=>it.id===(ME.petStyles?.[a.key]||""));
-  if(a.type==="fish"){ drawFish(x,accessory?.color); }
-  else { x.fillStyle="rgba(0,0,0,.18)"; el(x,0,0,16,5); x.fill();
-    if(a.type==="duck") drawDuck(x,mv,accessory?.color); else if(a.type==="pig") drawPig(x,mv,accessory?.color); else drawChicken(x,mv,accessory?.color); }
-  drawPetWear(x,a.fish,accessory);
+  if(a.type!=="fish"){ x.fillStyle="rgba(66,44,28,.2)"; el(x,0,1,a.type==="cow"?22:a.type==="pug"?19:17,5); x.fill(); }
+  drawPetByType(x,a.type,mv,accessory?.color);
+  drawPetWear(x,a.type,accessory);
   x.restore(); }
 function shadeColor(hex,factor=.7){ const h=String(hex||"").replace("#",""); if(!/^[0-9a-f]{6}$/i.test(h))return hex;
   return "#"+[0,2,4].map(i=>Math.max(0,Math.min(255,Math.round(parseInt(h.slice(i,i+2),16)*factor))).toString(16).padStart(2,"0")).join(""); }
-function drawPetWear(x,isFish,accessory){ if(!accessory||accessory.color)return;
+function drawPetWear(x,type,accessory){ if(!accessory||accessory.color)return;
+  const isFish=type==="fish", isBig=type==="cow"||type==="pug";
   x.save(); x.filter="brightness(.62) saturate(1.5) contrast(1.12)";
   x.font="22px 'Segoe UI Emoji','Apple Color Emoji',sans-serif"; x.textAlign="center"; x.textBaseline="middle";
-  const pos=accessory.id==="hat"?[isFish?4:10,isFish?-17:-40]:accessory.id==="bow"?[isFish?8:12,isFish?4:-16]:[-10,isFish?-4:-15];
+  const pos=accessory.id==="hat"?[isFish?4:isBig?10:9,isFish?-17:isBig?-49:-43]:accessory.id==="bow"?[isFish?8:isBig?13:11,isFish?4:isBig?-21:-17]:[-10,isFish?-4:isBig?-19:-15];
   x.fillText(accessory.emoji,pos[0],pos[1]); x.restore(); }
 function drawPetPreview(a,accessory){ const c=document.getElementById("petPreviewCanvas"); if(!c)return; const x=c.getContext("2d");
   x.clearRect(0,0,c.width,c.height); x.save(); x.translate(180,190); x.scale(3.4,3.4);
   x.fillStyle="rgba(37,74,48,.17)"; el(x,0,3,a.fish?20:18,a.fish?6:5); x.fill();
-  if(a.type==="fish")drawFish(x,accessory?.color);
-  else if(a.type==="duck")drawDuck(x,false,accessory?.color);
-  else if(a.type==="pig")drawPig(x,false,accessory?.color);
-  else drawChicken(x,false,accessory?.color);
-  drawPetWear(x,a.fish,accessory); x.restore(); }
-function drawChicken(x,mv,coat){ const b=mv?Math.sin(farmT*.35):0, body=coat||"#fff", shade=coat?shadeColor(coat,.72):"#eee"; x.save(); x.translate(0,b);
-  x.strokeStyle="#ef9b2e"; x.lineWidth=2.2; x.beginPath(); x.moveTo(-2,-6);x.lineTo(-3,0); x.moveTo(4,-6);x.lineTo(5,0); x.stroke();
-  x.fillStyle=shade; x.beginPath(); x.moveTo(-10,-14);x.lineTo(-21,-23);x.lineTo(-10,-25); x.closePath(); x.fill();
-  x.fillStyle=body; el(x,0,-14,14,12); x.fill();
-  x.fillStyle=shade; el(x,-2,-13,7,6); x.fill();
-  x.fillStyle=body; el(x,10,-26,8,8); x.fill();
-  x.fillStyle="#e5484d"; el(x,8,-33,3,3); x.fill(); el(x,12,-34,3,3); x.fill();
-  x.fillStyle="#ff9d2e"; x.beginPath(); x.moveTo(17,-26);x.lineTo(25,-24);x.lineTo(17,-22); x.closePath(); x.fill();
-  x.fillStyle="#e5484d"; el(x,17,-20,2.4,3.4); x.fill();
-  x.fillStyle="#222"; el(x,12,-27,1.6,1.6); x.fill(); x.restore(); }
-function drawDuck(x,mv,coat){ const b=mv?Math.sin(farmT*.35):0, body=coat||"#ffd23e", shade=coat?shadeColor(coat,.72):"#f0be2a"; x.save(); x.translate(0,b);
-  x.strokeStyle="#ef9b2e"; x.lineWidth=2.2; x.beginPath(); x.moveTo(-1,-5);x.lineTo(-2,0); x.moveTo(4,-5);x.lineTo(5,0); x.stroke();
-  x.fillStyle=shade; x.beginPath(); x.moveTo(-12,-14);x.lineTo(-20,-19);x.lineTo(-12,-21); x.closePath(); x.fill();
-  x.fillStyle=body; el(x,0,-14,15,11); x.fill();
-  x.fillStyle=shade; el(x,-2,-13,7,5); x.fill();
-  x.fillStyle=body; el(x,8,-19,5,7); x.fill(); el(x,12,-25,7.5,8); x.fill();
-  x.fillStyle="#ff9d2e"; el(x,20,-25,5.5,3); x.fill();
-  x.fillStyle="#222"; el(x,13,-27,1.6,1.6); x.fill(); x.restore(); }
-function drawPig(x,mv,coat){ const b=mv?Math.sin(farmT*.35):0, body=coat||"#f4a6c0", shade=coat?shadeColor(coat,.7):"#ec86a8"; x.save(); x.translate(0,b);
-  x.strokeStyle=shadeColor(body,.72); x.lineWidth=3; x.beginPath(); x.moveTo(-7,-6);x.lineTo(-7,0); x.moveTo(-1,-6);x.lineTo(-1,0); x.moveTo(5,-6);x.lineTo(5,0); x.stroke();
-  x.strokeStyle=shade; x.lineWidth=2; x.beginPath(); x.arc(-16,-17,3.2,0.3,5); x.stroke();
-  x.fillStyle=body; el(x,0,-16,17,12); x.fill();
-  x.fillStyle=shade; x.beginPath(); x.moveTo(10,-27);x.lineTo(15,-31);x.lineTo(17,-24); x.closePath(); x.fill();
-  x.fillStyle=body; el(x,14,-17,10,9); x.fill();
-  x.fillStyle=shade; el(x,23,-16,5,4.2); x.fill();
-  x.fillStyle=shadeColor(shade,.72); el(x,22,-16,1,1.6); x.fill(); el(x,25,-16,1,1.6); x.fill();
-  x.fillStyle="#5a2f3f"; el(x,16,-20,1.7,1.7); x.fill(); x.restore(); }
-function drawFish(x,coat){ const w=Math.sin(farmT*.3)*2, body=coat||"#ff8c3a", shade=coat?shadeColor(coat,.68):"#e0722a";
-  x.save(); x.translate(0,-4);
-  x.fillStyle=shade; x.beginPath(); x.moveTo(-9,-2+w);x.lineTo(-18,-8);x.lineTo(-18,4); x.closePath(); x.fill();
-  x.fillStyle=body; el(x,0,0,13,8); x.fill();
-  x.fillStyle=shade; x.beginPath(); x.moveTo(-3,-8);x.lineTo(4,-8);x.lineTo(0,-1); x.closePath(); x.fill();
-  x.fillStyle="#fff"; el(x,7,-1,2.6,2.6); x.fill(); x.fillStyle="#222"; el(x,8,-1,1.3,1.3); x.fill();
-  x.restore(); }
+  drawPetByType(x,a.type,false,accessory?.color);
+  drawPetWear(x,a.type,accessory); x.restore(); }
+
+const PET_INK="#63352f";
+function petEllipse(x,cx,cy,rx,ry,fill,stroke=PET_INK,lw=1.8){ x.beginPath(); el(x,cx,cy,rx,ry); x.fillStyle=fill; x.fill(); if(stroke){x.strokeStyle=stroke;x.lineWidth=lw;x.stroke();} }
+function petPath(x,points,fill,stroke=PET_INK,lw=1.8){ x.beginPath(); points.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])); x.closePath(); x.fillStyle=fill; x.fill(); if(stroke){x.strokeStyle=stroke;x.lineWidth=lw;x.lineJoin="round";x.stroke();} }
+function petEye(x,cx,cy,r=2.8){ petEllipse(x,cx,cy,r,r,"#3f2525",null); petEllipse(x,cx-.8,cy-.9,r*.34,r*.34,"#fff",null); }
+function petCheek(x,cx,cy,rx=3.1){ petEllipse(x,cx,cy,rx,rx*.55,"rgba(244,104,111,.45)",null); }
+function drawPetByType(x,type,mv,coat){
+  if(type==="fish")return drawFish(x,coat);
+  if(type==="duck")return drawDuck(x,mv,coat);
+  if(type==="pig")return drawPig(x,mv,coat);
+  if(type==="cow")return drawCow(x,mv,coat);
+  if(type==="pug")return drawPug(x,mv,coat);
+  drawChicken(x,mv,coat);
+}
+function drawChicken(x,mv,coat){ const b=mv?Math.sin(farmT*.35)*1.2:0, body=coat||"#f59a35", shade=coat?shadeColor(coat,.75):"#e66b27"; x.save(); x.translate(0,b);
+  x.strokeStyle="#bd6424"; x.lineWidth=2.2; x.lineCap="round"; x.beginPath(); x.moveTo(-4,-7);x.lineTo(-5,0);x.lineTo(-9,1);x.moveTo(4,-7);x.lineTo(5,0);x.lineTo(9,1);x.stroke();
+  petPath(x,[[-12,-17],[-22,-24],[-18,-13]],shade); petEllipse(x,-2,-17,16,14,body); petEllipse(x,-7,-17,8,8,"#f8b34e",PET_INK,1.4);
+  petEllipse(x,8,-29,10,10,body); petPath(x,[[2,-39],[6,-43],[9,-39],[13,-43],[15,-37]],"#d94735");
+  petPath(x,[[17,-29],[26,-25],[17,-23]],"#f6b72f"); petEllipse(x,15,-20,2.5,4,"#df4037",null); petEye(x,10,-31); petCheek(x,14,-26,2.5); x.restore(); }
+function drawDuck(x,mv,coat){ const b=mv?Math.sin(farmT*.35)*1.2:0, body=coat||"#ffd948", shade=coat?shadeColor(coat,.78):"#f3b932"; x.save(); x.translate(0,b);
+  x.strokeStyle="#c97925"; x.lineWidth=2.2; x.lineCap="round"; x.beginPath(); x.moveTo(-4,-6);x.lineTo(-5,0);x.moveTo(4,-6);x.lineTo(5,0);x.stroke();
+  petPath(x,[[-11,-17],[-21,-22],[-18,-12]],shade); petEllipse(x,-2,-16,17,13,body); petEllipse(x,-5,-17,8,7,shade,PET_INK,1.4);
+  petEllipse(x,10,-29,10,11,body); petEllipse(x,20,-27,7,3.6,"#f28c28"); petEye(x,12,-32); petCheek(x,14,-26,2.5); x.restore(); }
+function drawPig(x,mv,coat){ const b=mv?Math.sin(farmT*.35)*1.2:0, body=coat||"#f8a8b8", shade=coat?shadeColor(coat,.78):"#ea7f9b"; x.save(); x.translate(0,b);
+  x.strokeStyle=shadeColor(body,.65); x.lineWidth=3.2; x.lineCap="round"; x.beginPath(); x.moveTo(-8,-8);x.lineTo(-8,0);x.moveTo(2,-8);x.lineTo(2,0);x.moveTo(10,-9);x.lineTo(10,-1);x.stroke();
+  x.strokeStyle=PET_INK;x.lineWidth=1.8;x.beginPath();x.arc(-18,-18,4,0.3,5.8);x.stroke();
+  petEllipse(x,-1,-18,20,15,body); petPath(x,[[7,-31],[12,-38],[16,-29]],shade); petEllipse(x,13,-25,13,12,body);
+  petEllipse(x,22,-23,7,5.5,shade); petEllipse(x,20,-23,1.2,1.7,"#733c46",null);petEllipse(x,24,-23,1.2,1.7,"#733c46",null);
+  petEye(x,14,-28,3); petCheek(x,15,-19,3); x.strokeStyle="#7d3848";x.lineWidth=1.4;x.beginPath();x.arc(14,-20,5,0.1,1.2);x.stroke();x.restore(); }
+function drawFish(x,coat){ const w=Math.sin(farmT*.3)*2, body=coat||"#ff9138", shade=coat?shadeColor(coat,.72):"#16a8c8"; x.save(); x.translate(0,-5);
+  petPath(x,[[-11,-1+w],[-22,-10],[-21,8]],shade); petEllipse(x,0,0,16,11,body);
+  petPath(x,[[-6,-10],[1,-14],[4,-7]],"#30bfd6"); petPath(x,[[-3,8],[4,13],[7,6]],"#30bfd6");
+  x.strokeStyle="rgba(255,238,112,.9)";x.lineWidth=2.2;x.beginPath();x.arc(-4,0,7,-1.2,1.2);x.stroke(); petEye(x,8,-2,3.2); petCheek(x,8,4,2.5);
+  x.strokeStyle="#7a352b";x.lineWidth=1.4;x.beginPath();x.arc(11,2,3,0.3,1.5);x.stroke();x.restore(); }
+function drawCow(x,mv,coat){ const b=mv?Math.sin(farmT*.32)*1.1:0, body=coat||"#fff7e8", shade=coat?shadeColor(coat,.72):"#3f3334";x.save();x.translate(0,b);
+  x.strokeStyle="#6b4939";x.lineWidth=3.5;x.lineCap="round";x.beginPath();x.moveTo(-10,-9);x.lineTo(-10,0);x.moveTo(7,-9);x.lineTo(7,0);x.stroke();
+  petEllipse(x,-4,-21,22,16,body); petEllipse(x,-10,-23,8,9,shade,null); petEllipse(x,7,-15,7,6,shade,null);
+  petPath(x,[[-15,-36],[-22,-43],[-9,-39]],"#f3b370");petPath(x,[[9,-39],[18,-44],[16,-34]],"#f3b370");
+  petEllipse(x,-17,-34,8,4,body);petEllipse(x,15,-34,8,4,body);petEllipse(x,0,-34,16,15,body); petEllipse(x,-7,-37,7,8,shade,null);
+  petEllipse(x,4,-29,12,7,"#f4a7a5");petEllipse(x,0,-29,1.2,1.8,"#8b4b4b",null);petEllipse(x,7,-29,1.2,1.8,"#8b4b4b",null);petEye(x,-5,-35,3);petEye(x,7,-36,3);
+  x.strokeStyle="#8d2f2c";x.lineWidth=2.2;x.beginPath();x.moveTo(-12,-8);x.lineTo(10,-8);x.stroke();petEllipse(x,0,-7,3,4,"#f0bc34");x.restore(); }
+function drawPug(x,mv,coat){ const b=mv?Math.sin(farmT*.38)*1.1:0, body=coat||"#eecb98", shade=coat?shadeColor(coat,.68):"#59433e";x.save();x.translate(0,b);
+  petEllipse(x,-2,-17,18,15,body);x.strokeStyle="#7a563f";x.lineWidth=3;x.lineCap="round";x.beginPath();x.moveTo(-10,-8);x.lineTo(-10,0);x.moveTo(7,-8);x.lineTo(7,0);x.stroke();
+  x.strokeStyle=PET_INK;x.lineWidth=2;x.beginPath();x.arc(-18,-17,5,1.3,5.6);x.stroke();
+  petPath(x,[[-13,-34],[-21,-41],[-20,-27]],shade);petPath(x,[[10,-35],[20,-40],[18,-27]],shade);petEllipse(x,0,-31,16,15,body);
+  petEllipse(x,1,-30,11,10,shade,null);petEye(x,-6,-34,3.4);petEye(x,7,-34,3.4);petEllipse(x,1,-28,4,3,"#2e2424");
+  x.strokeStyle="#2e2424";x.lineWidth=1.5;x.beginPath();x.moveTo(1,-26);x.quadraticCurveTo(-1,-22,-5,-24);x.moveTo(1,-26);x.quadraticCurveTo(4,-22,8,-24);x.stroke();petCheek(x,-10,-27,2.6);petCheek(x,11,-27,2.6);
+  x.strokeStyle="#1685ad";x.lineWidth=2.4;x.beginPath();x.moveTo(-12,-18);x.lineTo(11,-18);x.stroke();petEllipse(x,0,-17,2.8,3.3,"#f2bc38");x.restore(); }
 function drawPlayer(x){ const s=depth(player.y); x.fillStyle="rgba(0,0,0,.18)"; el(x,player.x,player.y+2,20*s,8*s); x.fill();
   const h=78*s,w=h*240/260;
   if(playerImg && playerImg.complete && playerImg.naturalWidth){
