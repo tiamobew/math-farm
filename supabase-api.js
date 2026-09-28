@@ -23,6 +23,12 @@
     return result.data;
   };
   const normalizeUsername = value => String(value || "").trim().toLowerCase().normalize("NFKC");
+  const characterTypeKey = username => `math_farm_character_type_${normalizeUsername(username)}`;
+  const validCharacterType = value => ["cloud", "nature", "builder"].includes(value) ? value : "cloud";
+  const withCharacterType = user => user ? {
+    ...user,
+    charType: validCharacterType(user.charType || localStorage.getItem(characterTypeKey(user.username)))
+  } : user;
   async function usernameEmail(username) {
     const bytes = new TextEncoder().encode(normalizeUsername(username));
     const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -76,15 +82,23 @@
           unwrap(await client.auth.signInWithPassword({ email, password: p.password }));
           const user = unwrap(await client.rpc("get_my_profile"));
           if (!user) throw new Error("ไม่พบข้อมูลผู้เล่น");
-          return ok({ user });
+          return ok({ user: withCharacterType(user) });
         }
         case "getProfile": {
           const user = unwrap(await client.rpc("get_my_profile"));
-          return user ? ok({ user }) : fail("ไม่พบข้อมูลผู้เล่น");
+          return user ? ok({ user: withCharacterType(user) }) : fail("ไม่พบข้อมูลผู้เล่น");
         }
         case "saveCharacter": {
-          const user = unwrap(await client.rpc("save_character", { p_color: p.color, p_name: p.name, p_type: p.type || "cloud" }));
-          return ok({ user });
+          const type = validCharacterType(p.type);
+          let user;
+          try {
+            user = unwrap(await client.rpc("save_character", { p_color: p.color, p_name: p.name, p_type: type }));
+          } catch (error) {
+            if (!/save_character|schema cache|function/i.test(String(error?.message || error))) throw error;
+            user = unwrap(await client.rpc("save_character", { p_color: p.color, p_name: p.name }));
+          }
+          localStorage.setItem(characterTypeKey(user?.username || p.username), type);
+          return ok({ user: withCharacterType({ ...user, charType: type }) });
         }
         case "getMissions":
           return ok(unwrap(await client.rpc("get_mission_dashboard")));
