@@ -41,6 +41,7 @@
     no: row.student_no,
     color: row.color,
     charName: row.character_name,
+    charType: row.character_type || "cloud",
     points: Number(row.points || 0),
     coins: Number(row.coins || 0),
     pets: row.pets || {},
@@ -82,7 +83,7 @@
           return user ? ok({ user }) : fail("ไม่พบข้อมูลผู้เล่น");
         }
         case "saveCharacter": {
-          const user = unwrap(await client.rpc("save_character", { p_color: p.color, p_name: p.name }));
+          const user = unwrap(await client.rpc("save_character", { p_color: p.color, p_name: p.name, p_type: p.type || "cloud" }));
           return ok({ user });
         }
         case "getMissions":
