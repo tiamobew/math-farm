@@ -225,6 +225,27 @@
             points: x.points_awarded, date: x.completed_on, at: x.completed_at, photo: x.evidence_data_url || ""
           })) });
         }
+        case "adminActivity": {
+          await requireAdmin();
+          const since = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+          const logins = unwrap(await client.from("player_login_days")
+            .select("user_id,login_date,login_count,profiles!inner(username)")
+            .gte("login_date", since).order("login_date", { ascending: false }).limit(3000)) || [];
+          const attempts = unwrap(await client.from("question_attempts")
+            .select("user_id,correct,score_awarded,answered_at,questions!inner(score)")
+            .gte("answered_at", `${since}T00:00:00+07:00`).eq("correct", true).limit(5000)) || [];
+          const daily = new Map();
+          logins.forEach(x => daily.set(`${x.user_id}|${x.login_date}`, {
+            username: x.profiles.username, date: x.login_date, loginCount: Number(x.login_count || 0), score: 0, easy: 0, medium: 0, hard: 0
+          }));
+          attempts.forEach(x => {
+            const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(new Date(x.answered_at));
+            const row = daily.get(`${x.user_id}|${date}`); if (!row) return;
+            const score = Number(x.questions?.score || x.score_awarded || 0); row.score += Number(x.score_awarded || 0);
+            row[score <= 1 ? "easy" : score <= 3 ? "medium" : "hard"]++;
+          });
+          return ok({ activity: [...daily.values()] });
+        }
         default:
           throw new Error(`ไม่รองรับคำสั่ง ${action}`);
       }

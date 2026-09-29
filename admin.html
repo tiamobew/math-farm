@@ -190,11 +190,27 @@
     <div class="tabbar">
       <button class="on" data-tab="users" onclick="tab('users')">👦 ผู้เรียน</button>
       <button data-tab="stats" onclick="tab('stats')">📊 สถิติ/อันดับ</button>
+      <button data-tab="activity" onclick="tab('activity')">📅 การเข้าเกม</button>
       <button data-tab="missions" onclick="tab('missions')">🎯 จัดการภารกิจ</button>
       <button data-tab="questions" onclick="tab('questions')">❓ คำถามคณิต</button>
       <button data-tab="shop" onclick="tab('shop')">🛒 ราคาร้านค้า</button>
       <button data-tab="evidence" onclick="tab('evidence')">🖼️ หลักฐานกิจกรรม</button>
       <button data-tab="export" onclick="tab('export')">📤 ส่งออกข้อมูล</button>
+    </div>
+
+    <!-- DAILY ACTIVITY -->
+    <div class="pane" id="pane-activity">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div><h2>📅 ประวัติการเข้าเกมและเควสรายวัน</h2><p class="muted" style="margin-top:4px">แสดง 30 วันล่าสุด เรียงจากวันที่ล่าสุด</p></div>
+          <input id="activitySearch" placeholder="ค้นหาชื่อ/ชั้น/วันที่" style="max-width:280px" oninput="renderActivity()">
+        </div>
+        <div class="tableHint">📱 เลื่อนดูข้อมูลหรือใช้ช่องค้นหา</div>
+        <div class="tblwrap mobileCards" style="margin-top:10px">
+          <table class="tbl stacked"><thead><tr><th>วันที่</th><th>ชื่อผู้เรียน</th><th>ชั้น</th><th>เข้าเกม</th><th>คะแนนโจทย์</th><th>ง่าย</th><th>กลาง</th><th>ยาก</th></tr></thead>
+          <tbody id="activityRows"></tbody></table>
+        </div>
+      </div>
     </div>
 
     <!-- USERS -->
@@ -347,6 +363,7 @@
         <div class="row">
           <button class="btn" onclick="exportUsers()">⬇ รายชื่อผู้เรียน + แต้ม</button>
           <button class="btn" onclick="exportLog()">⬇ ประวัติการทำภารกิจ</button>
+          <button class="btn" onclick="exportActivity()">⬇ ประวัติการเข้าเกม/เควส</button>
         </div>
       </div>
     </div>
@@ -454,6 +471,7 @@ const DB={
     if(!q){q=DEFAULT_QUESTIONS.slice();localStorage.setItem("cb_questions",JSON.stringify(q));}return q;},
   setQuestions(q){localStorage.setItem("cb_questions",JSON.stringify(q))},
   log(){return JSON.parse(localStorage.getItem("cb_log")||"[]")},
+  daily(){return JSON.parse(localStorage.getItem("cb_daily_activity")||"{}")},
   shop(){let s=JSON.parse(localStorage.getItem("cb_shop")||"null");
     if(!s)s=DEFAULT_SHOP.slice();
     else if(!s.some(x=>x.type==="food"))s=s.concat(DEFAULT_SHOP.filter(x=>x.type==="food"));
@@ -505,6 +523,11 @@ function offlineAdmin(action,p){
       DB.setQuestions(q); return {ok:true,added:(p.items||[]).length}; }
     case "adminDeleteQuestion":{ DB.setQuestions(DB.questions().filter(x=>x.id!==p.id)); return {ok:true}; }
     case "adminLog": return {ok:true,log:DB.log()};
+    case "adminActivity":{
+      const rows=[]; Object.entries(DB.daily()).forEach(([username,data])=>Object.entries(data.logins||{}).forEach(([date,loginCount])=>{
+        const attempts=(data.attempts||[]).filter(a=>a.date===date&&a.correct);
+        rows.push({username,date,loginCount,score:attempts.reduce((n,a)=>n+(Number(a.score)||0),0),easy:attempts.filter(a=>a.level==="easy").length,medium:attempts.filter(a=>a.level==="medium").length,hard:attempts.filter(a=>a.level==="hard").length});
+      })); return {ok:true,activity:rows}; }
     case "adminListShop": return {ok:true,shop:DB.shop()};
     case "adminSaveShopPrice":{
       const shop=DB.shop(); const item=shop.find(x=>x.type===p.type&&x.id===p.id);
@@ -532,14 +555,25 @@ function adminLogout(){ PIN=""; document.getElementById("adminPassword").value="
   document.getElementById("loginScreen").classList.add("active"); }
 
 /* ====== data ====== */
-let USERS=[], MISSIONS=[], LOG=[], QUESTIONS=[], SHOP=[];
+let USERS=[], MISSIONS=[], LOG=[], QUESTIONS=[], SHOP=[], ACTIVITY=[];
 async function refreshAll(){
-  const results=await Promise.all(["adminListUsers","adminListMissions","adminLog","adminListQuestions","adminListShop"].map(x=>api(x)));
+  const results=await Promise.all(["adminListUsers","adminListMissions","adminLog","adminListQuestions","adminListShop","adminActivity"].map(x=>api(x)));
   const failed=results.find(x=>!x.ok); if(failed){ alert(failed.error||"โหลดข้อมูลไม่สำเร็จ"); return; }
   USERS=results[0].users||[]; MISSIONS=results[1].missions||[];
-  LOG=results[2].log||[]; QUESTIONS=results[3].questions||[]; SHOP=results[4].shop||[];
+  LOG=results[2].log||[]; QUESTIONS=results[3].questions||[]; SHOP=results[4].shop||[]; ACTIVITY=results[5].activity||[];
   renderStats(); renderUsers(); renderRank(); renderMissionStats(); renderMissionEditor();
-  renderQuestionEditor(); renderShopEditor(); renderEvidence();
+  renderQuestionEditor(); renderShopEditor(); renderEvidence(); renderActivity();
+}
+function renderActivity(){
+  const q=(document.getElementById("activitySearch")?.value||"").toLowerCase();
+  const user=un=>USERS.find(u=>u.username===un)||{fullname:un,cls:""};
+  const rows=ACTIVITY.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(a.username).localeCompare(String(b.username)))
+    .filter(a=>{const u=user(a.username);return !q||[a.date,a.username,u.fullname,u.cls].join(" ").toLowerCase().includes(q);});
+  document.getElementById("activityRows").innerHTML=rows.map(a=>{const u=user(a.username);return `<tr>
+    <td data-label="วันที่">${esc(a.date)}</td><td data-label="ชื่อผู้เรียน"><b>${esc(u.fullname||a.username)}</b><br><small class="muted">${esc(a.username)}</small></td>
+    <td data-label="ชั้น">${esc(u.cls)}</td><td data-label="เข้าเกม">${Number(a.loginCount)||0} ครั้ง</td><td data-label="คะแนนโจทย์">⭐ ${Number(a.score)||0}</td>
+    <td data-label="ง่าย">🌱 ${Number(a.easy)||0}</td><td data-label="กลาง">🌿 ${Number(a.medium)||0}</td><td data-label="ยาก">🌳 ${Number(a.hard)||0}</td></tr>`;}).join("")
+    ||'<tr><td colspan="8" class="muted" style="text-align:center;padding:24px">ยังไม่มีประวัติการเข้าเกม</td></tr>';
 }
 function renderEvidence(){
   const q=(document.getElementById("ev_search")?.value||"").toLowerCase();
@@ -852,6 +886,12 @@ function exportLog(){
   const mName=id=>(MISSIONS.find(m=>m.id===id)||{}).title||id;
   LOG.forEach(l=>rows.push([l.username,mName(l.missionId),l.points,l.date,l.at]));
   download("ประวัติการทำภารกิจ.csv",csv(rows));
+}
+function exportActivity(){
+  const rows=[["วันที่","username","ชื่อ-สกุล","ชั้น","จำนวนครั้งเข้าเกม","คะแนนโจทย์","โจทย์ง่าย","โจทย์กลาง","โจทย์ยาก"]];
+  ACTIVITY.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).forEach(a=>{const u=USERS.find(x=>x.username===a.username)||{};
+    rows.push([a.date,a.username,u.fullname||"",u.cls||"",a.loginCount,a.score,a.easy,a.medium,a.hard]);});
+  download("ประวัติการเข้าเกมและเควสรายวัน.csv",csv(rows));
 }
 function exportQuestions(){
   const rows=[["โจทย์","คำตอบ","คะแนน","เหรียญ","วิชา"]];
