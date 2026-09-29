@@ -100,6 +100,10 @@
           localStorage.setItem(characterTypeKey(user?.username || p.username), type);
           return ok({ user: withCharacterType({ ...user, charType: type }) });
         }
+        case "recordLogin":
+          return ok(unwrap(await client.rpc("record_daily_login")) || {});
+        case "getDailyProgress":
+          return ok(unwrap(await client.rpc("get_daily_progress")) || {});
         case "getMissions":
           return ok(unwrap(await client.rpc("get_mission_dashboard")));
         case "leaderboard":

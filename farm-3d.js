@@ -148,7 +148,8 @@ function addAccessory(g,id){
   }
 }
 function animalColor(type,accessory){
-  if(accessory==="color_pink")return 0xd53f86;if(accessory==="color_blue")return 0x197daa;if(accessory==="color_gold")return 0xbd8100;
+  if(accessory==="color_pink")return 0xd53f86;if(accessory==="color_blue")return 0x197daa;
+  if(accessory==="color_green")return 0x238b57;if(accessory==="color_purple")return 0x7446b8;if(accessory==="color_gold")return 0xbd8100;
   return ({cow:0xf2eee2,pug:0xd9aa74,pig:0xf49ab2,chicken:0xf0a13b,duck:0xf7d74e,fish:0x3bbdd3,sheep:0xf0eadf,rabbit:0xe6d7d3})[type]||0xe49a54;
 }
 function buildAnimal(a){

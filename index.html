@@ -82,6 +82,15 @@
   .mission .p{color:var(--warn);font-weight:800;font-size:16px}
   .mission.done{opacity:.55}
   .mission .btn{padding:9px 14px;font-size:16px}
+  .dailyCard{margin-bottom:16px;background:linear-gradient(135deg,#183f55,#194838);border-color:#3b8f70}
+  .dailyHead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+  .dailyDate{font-size:14px;color:#ccebdd;font-weight:700}
+  .dailyGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+  .dailyQuest{background:rgba(5,23,29,.58);border:1px solid rgba(124,224,180,.28);border-radius:13px;padding:12px}
+  .dailyQuest.done{border-color:#5ef2c6;background:rgba(34,104,76,.46)}
+  .dailyQuestTop{display:flex;justify-content:space-between;gap:8px;font-weight:800}
+  .dailyBar{height:9px;background:rgba(0,0,0,.28);border-radius:999px;overflow:hidden;margin-top:8px}
+  .dailyBar>i{display:block;height:100%;background:linear-gradient(90deg,#5ef2c6,#ffd34e);border-radius:inherit;transition:width .45s ease}
 
   /* ---------- CUSTOMIZE ---------- */
   .heroBot{display:grid;place-items:center;padding:10px;position:relative;min-height:240px}
@@ -112,6 +121,11 @@
   .heroBot.mascot-surprised .mascot-mouth-o{opacity:1}
   .modeTag{position:fixed;bottom:10px;right:12px;font-size:13px;color:var(--muted);
     background:rgba(0,0,0,.35);padding:4px 10px;border-radius:8px}
+  .globalLoader{position:fixed;inset:0;z-index:120;display:grid;place-items:center;background:rgba(7,17,31,.72);backdrop-filter:blur(8px);opacity:0;visibility:hidden;transition:.18s}
+  .globalLoader.on{opacity:1;visibility:visible}
+  .loaderBox{min-width:210px;text-align:center;padding:22px 26px;border:1px solid rgba(255,255,255,.3);border-radius:20px;background:rgba(20,39,67,.96);box-shadow:0 18px 48px rgba(0,0,0,.4);font-weight:800}
+  .loaderSpinner{width:52px;height:52px;margin:0 auto 12px;border:6px solid rgba(94,242,198,.2);border-top-color:#5ef2c6;border-radius:50%;animation:spin .75s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
 
   /* ---------- LEVEL + BADGES ---------- */
   .lvTop{display:flex;gap:14px;align-items:center}
@@ -207,6 +221,7 @@
     border:2px solid #b9dda5;border-radius:18px;margin:12px 0;position:relative;overflow:hidden}
   .petPreview canvas{width:180px;height:120px;filter:drop-shadow(0 8px 6px rgba(0,0,0,.18))}
   .accessoryCard .pe{font-family:'Segoe UI Emoji','Apple Color Emoji',sans-serif;filter:none}
+  .accessoryColor{width:54px;height:54px;margin:0 auto;border:5px solid #fff;border-radius:50%;box-shadow:0 3px 0 rgba(34,83,52,.25),inset 0 0 0 2px rgba(0,0,0,.12)}
   .accessoryCard.on{border-color:#ff9d3e;box-shadow:0 0 0 3px rgba(255,157,62,.2)}
   .foodNote{background:#fff8df;border:1px solid #f0cf68;color:#755300;padding:9px 12px;border-radius:12px;font-weight:800}
   .qText{font-size:34px;font-weight:900;text-align:center;margin:14px 0;color:var(--accent)}
@@ -245,6 +260,7 @@
     .topActions{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
     .topActions .btn{width:100%;padding:8px 5px;font-size:15px;white-space:nowrap}
     .mission{padding:12px;align-items:flex-start}
+    .dailyGrid{grid-template-columns:1fr}
     .mission .ic{font-size:29px}
     .mission .btn{min-height:42px}
     .badges{justify-content:center}
@@ -258,7 +274,7 @@
     .islandStage::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
       background:linear-gradient(180deg,rgba(37,117,163,.14),transparent 18%,transparent 76%,rgba(29,97,56,.12))}
     #island,#farm3d{position:relative;z-index:0;width:auto;height:100%;max-width:none;min-width:100%;flex:none;
-      transform:translateX(var(--farm-camera-x,0px));transition:transform .12s ease-out;will-change:transform}
+      transform:translateX(var(--farm-camera-x,0px));will-change:transform}
     #farm3d{position:absolute;left:50%;top:0;transform:translateX(calc(-50% + var(--farm-camera-x,0px)))}
     .hudTop{top:max(6px,env(safe-area-inset-top));left:6px;right:6px;display:flex;
       flex-direction:column;align-items:stretch;gap:6px;z-index:5}
@@ -462,6 +478,9 @@
 </style>
 </head>
 <body>
+<div id="globalLoader" class="globalLoader" role="status" aria-live="polite" aria-hidden="true">
+  <div class="loaderBox"><div class="loaderSpinner"></div><div id="loaderText">กำลังเตรียมฟาร์ม...</div></div>
+</div>
 
 <!-- =================== AUTH =================== -->
 <section id="authScreen" class="screen active">
@@ -531,6 +550,11 @@
         <button class="btn ghost sm" id="muteBtn" onclick="toggleSound()" title="เปิด/ปิดเสียง">🔊</button>
         <button class="btn ghost sm" onclick="logout()">ออก</button>
       </div>
+    </div>
+
+    <div class="card dailyCard">
+      <div class="dailyHead"><h2>📅 เควสประจำวัน</h2><div class="dailyDate" id="dailyDate">กำลังโหลด...</div></div>
+      <div id="dailyQuestList" class="dailyGrid"></div>
     </div>
 
     <div class="card" style="margin-bottom:16px">
@@ -929,20 +953,26 @@ let FOOD=[
 ];
 const PET_ACCESSORIES=[
   {id:"hat",name:"หมวก",emoji:"🎩"},{id:"bow",name:"โบว์",emoji:"🎀"},{id:"bag",name:"กระเป๋า",emoji:"🎒"},
-  {id:"color_pink",name:"สีชมพูเข้ม",emoji:"🩷",color:"#d53f86"},
-  {id:"color_blue",name:"สีฟ้าเข้ม",emoji:"🩵",color:"#197daa"},
-  {id:"color_gold",name:"สีทองเข้ม",emoji:"💛",color:"#bd8100"},
+  {id:"color_pink",name:"สีชมพูเข้ม",emoji:"●",color:"#d53f86"},
+  {id:"color_blue",name:"สีฟ้าเข้ม",emoji:"●",color:"#197daa"},
+  {id:"color_green",name:"สีเขียวเข้ม",emoji:"●",color:"#238b57"},
+  {id:"color_purple",name:"สีม่วงเข้ม",emoji:"●",color:"#7446b8"},
+  {id:"color_gold",name:"สีทองเข้ม",emoji:"●",color:"#bd8100"},
 ];
 /* ---------- คลังโจทย์คณิตเริ่มต้น (ครูแก้ได้ในหน้าแอดมิน) ---------- */
 const DEFAULT_QUESTIONS=[
   {id:"q1",question:"7 + 8 = ?",answer:"15",score:1,coins:25,subject:"คณิตศาสตร์"},
-  {id:"q2",question:"12 × 3 = ?",answer:"36",score:1,coins:25,subject:"คณิตศาสตร์"},
+  {id:"q2",question:"12 − 5 = ?",answer:"7",score:1,coins:25,subject:"คณิตศาสตร์"},
   {id:"q3",question:"45 ÷ 9 = ?",answer:"5",score:1,coins:25,subject:"คณิตศาสตร์"},
   {id:"q4",question:"25 − 17 = ?",answer:"8",score:1,coins:25,subject:"คณิตศาสตร์"},
-  {id:"q5",question:"6 × 7 = ?",answer:"42",score:1,coins:25,subject:"คณิตศาสตร์"},
-  {id:"q6",question:"9 + 15 = ?",answer:"24",score:1,coins:25,subject:"คณิตศาสตร์"},
-  {id:"q7",question:"100 − 64 = ?",answer:"36",score:1,coins:25,subject:"คณิตศาสตร์"},
-  {id:"q8",question:"8 × 8 = ?",answer:"64",score:1,coins:25,subject:"คณิตศาสตร์"},
+  {id:"q5",question:"12 × 3 = ?",answer:"36",score:2,coins:40,subject:"คณิตศาสตร์"},
+  {id:"q6",question:"6 × 7 = ?",answer:"42",score:2,coins:40,subject:"คณิตศาสตร์"},
+  {id:"q7",question:"100 − 64 = ?",answer:"36",score:2,coins:40,subject:"คณิตศาสตร์"},
+  {id:"q8",question:"8 × 8 = ?",answer:"64",score:3,coins:50,subject:"คณิตศาสตร์"},
+  {id:"q9",question:"(18 + 6) ÷ 3 = ?",answer:"8",score:4,coins:70,subject:"คณิตศาสตร์"},
+  {id:"q10",question:"15 × 6 − 25 = ?",answer:"65",score:4,coins:70,subject:"คณิตศาสตร์"},
+  {id:"q11",question:"3/4 ของ 80 เท่ากับเท่าไร?",answer:"60",score:5,coins:90,subject:"คณิตศาสตร์"},
+  {id:"q12",question:"จำนวนใดคูณตัวเองแล้วได้ 144?",answer:"12",score:5,coins:90,subject:"คณิตศาสตร์"},
 ];
 function normAns(s){ return String(s==null?"":s).trim().toLowerCase().replace(/\s+/g,""); }
 function strictNum(s){ s=normAns(s);
@@ -996,11 +1026,14 @@ const DB = {
   missions(){ let m=JSON.parse(localStorage.getItem("cb_missions")||"null");
     if(!m){ m=DEFAULT_MISSIONS.slice(); localStorage.setItem("cb_missions",JSON.stringify(m)); } return m; },
   questions(){ let q=JSON.parse(localStorage.getItem("cb_questions")||"null");
-    if(!q){ q=DEFAULT_QUESTIONS.slice(); localStorage.setItem("cb_questions",JSON.stringify(q)); } return q; },
+    const oldSeed=Array.isArray(q)&&q.length===8&&q.every((x,i)=>x.id===`q${i+1}`&&(Number(x.score)||1)===1);
+    if(!q||oldSeed){ q=DEFAULT_QUESTIONS.slice(); localStorage.setItem("cb_questions",JSON.stringify(q)); } return q; },
   log(){ return JSON.parse(localStorage.getItem("cb_log")||"[]"); },
   setLog(l){ localStorage.setItem("cb_log",JSON.stringify(l)); },
   farmStates(){ return JSON.parse(localStorage.getItem("cb_farm_states")||"{}"); },
   setFarmStates(s){ localStorage.setItem("cb_farm_states",JSON.stringify(s)); },
+  daily(){ return JSON.parse(localStorage.getItem("cb_daily_activity")||"{}"); },
+  setDaily(s){ localStorage.setItem("cb_daily_activity",JSON.stringify(s)); },
   shop(){ let s=JSON.parse(localStorage.getItem("cb_shop")||"null");
     if(!s){s=PETS.map(x=>({...x,type:"pets"})).concat(DECOR.map(x=>({...x,type:"decor"})),FOOD.map(x=>({...x,type:"food"})));
     }else if(!s.some(x=>x.type==="food")){s=s.concat(FOOD.map(x=>({...x,type:"food"})));}
@@ -1028,6 +1061,16 @@ function offlineApi(action,p){
       return {ok:true,user:pub(u)};
     }
     case "getProfile":{ const u=find(p.username); return u?{ok:true,user:pub(u)}:{ok:false,error:"ไม่พบผู้ใช้"}; }
+    case "recordLogin":{
+      const all=DB.daily(), key=(p.username||"").toLowerCase(), date=today();
+      const mine=all[key]||{logins:{},attempts:[]}; mine.logins[date]=(mine.logins[date]||0)+1; all[key]=mine; DB.setDaily(all);
+      return {ok:true,loginDate:date,loginCount:mine.logins[date]}; }
+    case "getDailyProgress":{
+      const all=DB.daily(), mine=all[(p.username||"").toLowerCase()]||{logins:{},attempts:[]}, date=today();
+      const rows=(mine.attempts||[]).filter(a=>a.date===date&&a.correct);
+      return {ok:true,date,loggedIn:Boolean(mine.logins?.[date]),loginCount:mine.logins?.[date]||0,
+        score:rows.reduce((n,a)=>n+(Number(a.score)||0),0),easy:rows.filter(a=>a.level==="easy").length,
+        medium:rows.filter(a=>a.level==="medium").length,hard:rows.filter(a=>a.level==="hard").length}; }
     case "saveCharacter":{
       const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
       u.color=p.color; u.charName=p.name; u.charType=["cloud","nature","builder"].includes(p.type)?p.type:"cloud"; DB.setUsers(users); return {ok:true,user:pub(u)};
@@ -1061,7 +1104,9 @@ function offlineApi(action,p){
     case "answerQuestion":{
       const u=find(p.username); if(!u) return {ok:false,error:"ไม่พบผู้ใช้"};
       const q=DB.questions().find(x=>x.id===p.questionId); if(!q) return {ok:false,error:"ไม่พบคำถาม"};
-      if(!compareAns(p.answer,q.answer)) return {ok:true,correct:false};
+      const correct=compareAns(p.answer,q.answer), all=DB.daily(), key=u.username.toLowerCase(), mine=all[key]||{logins:{},attempts:[]};
+      mine.attempts.push({date:today(),correct,score:correct?(Number(q.score)||1):0,level:questionDifficulty(q)}); all[key]=mine; DB.setDaily(all);
+      if(!correct) return {ok:true,correct:false};
       const reward=Number.isFinite(Number(q.coins))?Math.max(0,Number(q.coins)):25;
       const score=Number.isFinite(Number(q.score))?Math.max(0,Number(q.score)):1;
       u.coins=(u.coins||0)+reward; u.points=(u.points||0)+score; DB.setUsers(users);
@@ -1110,15 +1155,28 @@ function pub(u){ return {username:u.username,fullname:u.fullname,cls:u.cls,no:u.
 let ME=null;
 let customizeDirty=false;
 let customizeOriginal=null;
+let loaderDepth=0, screenTransition=0;
 
-function showScreen(id){
+function showLoader(text="กำลังโหลด..."){
+  loaderDepth++; const el=document.getElementById("globalLoader");
+  document.getElementById("loaderText").textContent=text; el.classList.add("on"); el.setAttribute("aria-hidden","false");
+}
+function hideLoader(force=false){
+  loaderDepth=force?0:Math.max(0,loaderDepth-1); if(loaderDepth)return;
+  const el=document.getElementById("globalLoader"); el.classList.remove("on"); el.setAttribute("aria-hidden","true");
+}
+
+async function showScreen(id){
+  const transition=++screenTransition; showLoader(id==="farmScreen"?"กำลังเตรียมฟาร์ม...":"กำลังเปลี่ยนหน้า...");
   if(id!=="farmScreen") farmActive=false;   // หยุดลูปเกมเมื่อออกจากเกาะ
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
-  if(id==="customizeScreen") openCustomize();
-  if(id==="leaderboardScreen") openLeaderboard();
-  if(id==="farmScreen") openFarm();
-  window.scrollTo(0,0);
+  try{
+    if(id==="customizeScreen") await openCustomize();
+    if(id==="leaderboardScreen") await openLeaderboard();
+    if(id==="farmScreen") await openFarm();
+    window.scrollTo(0,0); await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  }finally{ if(transition===screenTransition) hideLoader(true); else hideLoader(); }
 }
 function switchTab(t){
   document.getElementById("tabLogin").classList.toggle("on",t==="login");
@@ -1166,8 +1224,9 @@ async function enterApp(){
   const mi=Sound.isMuted()?"🔇":"🔊";
   ["muteBtn","muteBtn2"].forEach(id=>{const b=document.getElementById(id); if(b)b.textContent=mi;});
   Sound.startBGM();
-  showScreen("appScreen");
-  await loadMissions();
+  await api("recordLogin",{username:ME.username});
+  await showScreen("appScreen");
+  await Promise.all([loadMissions(),loadDailyProgress()]);
   if(!localStorage.getItem("cb_seen_help")){ localStorage.setItem("cb_seen_help","1"); setTimeout(openHelp,400); }
 }
 function openHelp(){ Sound.resume(); document.getElementById("helpModal").style.display="grid"; }
@@ -1314,6 +1373,19 @@ function openCustomize(){
   nameInput.onkeydown=e=>{ if(e.key==="Enter") saveCharacter(); };
   document.getElementById("custBotWrap").onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); playMascotGreeting(); } };
   mascotSay(`สวัสดี เราชื่อ ${customizeOriginal.name}!`,"wave",1800);
+}
+async function loadDailyProgress(){
+  const r=await api("getDailyProgress",{username:ME.username}), data=r.ok?r:{date:today(),score:0,easy:0,medium:0,hard:0,loggedIn:true};
+  document.getElementById("dailyDate").textContent=`วันที่ ${data.date||today()} · เข้าเกมวันนี้ ${data.loginCount||1} ครั้ง`;
+  const quests=[
+    {icon:"⭐",name:"ทำคะแนนวันนี้",value:Number(data.score)||0,target:10,unit:"คะแนน"},
+    {icon:"🌱",name:"โจทย์ง่าย",value:Number(data.easy)||0,target:3,unit:"ข้อ"},
+    {icon:"🌿",name:"โจทย์กลาง",value:Number(data.medium)||0,target:2,unit:"ข้อ"},
+    {icon:"🌳",name:"โจทย์ยาก",value:Number(data.hard)||0,target:1,unit:"ข้อ"},
+  ];
+  document.getElementById("dailyQuestList").innerHTML=quests.map(q=>{const done=q.value>=q.target,pct=Math.min(100,q.value/q.target*100);return `
+    <div class="dailyQuest ${done?"done":""}"><div class="dailyQuestTop"><span>${q.icon} ${q.name}</span><span>${done?"✅":`${q.value}/${q.target} ${q.unit}`}</span></div>
+    <div class="dailyBar"><i style="width:${pct}%"></i></div></div>`;}).join("");
 }
 function renderCharacterTypes(){const host=document.getElementById("characterTypes");if(!host)return;
   host.innerHTML=CHARACTER_TYPES.map(t=>`<button type="button" class="characterType ${t.id===ME._pickType?"on":""}" onclick="pickCharacterType('${t.id}')"><span style="--c:${ME._pickColor};--cd:${colorPair(ME._pickColor)[1]}">${robotSVG(undefined,undefined,undefined,t.id)}</span>${t.name}<small>${t.note}</small></button>`).join("");
@@ -1550,9 +1622,11 @@ async function openFarm(){
   farmDirty=false; updateFarmSaveButton();
   farmActive=true; farmT=0; window.MathFarm3D?.enterFarm(); if(!farmRAF) farmLoop();
 }
-function exitFarm(){
-  if(farmDirty &&
-    !confirm("ยังไม่ได้บันทึกฟาร์ม หากกลับตอนนี้ระบบจะใช้ข้อมูลที่บันทึกเดิม ต้องการกลับโดยไม่บันทึกหรือไม่?")) return;
+async function exitFarm(){
+  if(farmDirty){
+    if(!confirm("ฟาร์มมีการเปลี่ยนแปลง กด ตกลง เพื่อบันทึกก่อนออก (กดยกเลิกเพื่ออยู่ในฟาร์มต่อ)")) return;
+    const saved=await saveFarmState(true); if(!saved)return;
+  }
   farmDirty=false; farmActive=false; window.MathFarm3D?.leaveFarm(); if(farmRAF){cancelAnimationFrame(farmRAF);farmRAF=0;}
   const earned=(ME.coins||0)-sessionStartCoins;
   showScreen("appScreen");
@@ -1572,18 +1646,19 @@ function updateFarmSaveButton(){
   b.innerHTML=farmDirty?'<span class="wideLabel">💾 บันทึกฟาร์ม •</span><span class="compactLabel">💾•</span>'
     :'<span class="wideLabel">✅ บันทึกแล้ว</span><span class="compactLabel">✅</span>';
 }
-async function saveFarmState(){
-  if(!player)return;
+async function saveFarmState(silent=false){
+  if(!player)return false;
   const state=farmSnapshot();
   const b=document.getElementById("saveFarmBtn"); if(b){b.disabled=true;b.textContent="กำลังบันทึก...";}
   const r=await api("saveFarmState",{username:ME.username,state});
   if(b)b.disabled=false;
   if(!r.ok){ farmDirty=true; updateFarmSaveButton();
-    return toast(r.error||"บันทึกฟาร์มไม่สำเร็จ",1900,"var(--bad)","#3a0000"); }
+    toast(r.error||"บันทึกฟาร์มไม่สำเร็จ",1900,"var(--bad)","#3a0000"); return false; }
   savedFarmState=r.farmState||state;
   farmDirty=JSON.stringify(farmSnapshot())!==JSON.stringify(state);
   updateFarmSaveButton();
-  toast("บันทึกฟาร์มแล้ว ✔",1500,"#37c26b","#04210f");
+  if(!silent)toast("บันทึกฟาร์มแล้ว ✔",1500,"#37c26b","#04210f");
+  return true;
 }
 function updateCoins(){ ["coinCount","coinCount2"].forEach(id=>{const e=document.getElementById(id); if(e)e.textContent=ME.coins||0;}); }
 function updateFood(){ ["foodCount","foodCount2","foodCount3"].forEach(id=>{const e=document.getElementById(id); if(e)e.textContent=ME.petFood||0;}); }
@@ -1685,7 +1760,8 @@ async function submitAnswer(){
     const topPoints=document.getElementById("topPoints"); if(topPoints) topPoints.textContent=ME.points||0;
     updateCoins(); Sound.chop(); Sound.correct(); sessionChops++;
     const gainedScore=Number.isFinite(Number(r.score))?Number(r.score):(Number(t.q.score)||1);
-    t.alive=false; t.regrow=farmT+300; t.q=null; closeQ(); toast(`ถูกต้อง! +${gainedScore} คะแนน · +${r.reward} 🪙`,1900,"#ffd23e","#3a2c00"); }
+    t.alive=false; t.regrow=farmT+300; t.q=null; closeQ(); loadDailyProgress();
+    toast(`ถูกต้อง! +${gainedScore} คะแนน · +${r.reward} 🪙`,1900,"#ffd23e","#3a2c00"); }
   else if(r.ok){ Sound.wrong(); const m=document.getElementById("qMsg"); m.className="msg err"; m.textContent="ยังไม่ถูก ลองอีกครั้ง 💪";
     document.getElementById("qAnswer").select(); }
   else document.getElementById("qMsg").textContent=r.error||"เกิดข้อผิดพลาด";
@@ -1709,11 +1785,11 @@ function renderShop(){ updateCoins(); updateFood();
 }
 async function buyPet(id){ const r=await api("buyPet",{username:ME.username,petId:id});
   if(r.ok){ ME.coins=r.coins; ME.pets=r.pets; updateCoins(); renderShop();
-    animals.push(makeAnimal(id,`${id}:${Math.max(0,(ME.pets[id]||1)-1)}`)); Sound.buy(); Sound.animal(id);
+    animals.push(makeAnimal(id,`${id}:${Math.max(0,(ME.pets[id]||1)-1)}`)); markFarmDirty(); Sound.buy(); Sound.animal(id);
     const pet=PETS.find(x=>x.id===id); toast(`ซื้อ${pet.name} ${pet.emoji}!`); }
   else toast(r.error||"ซื้อไม่สำเร็จ",1800,"var(--bad)","#3a0000"); }
 async function buyDecor(id){ const r=await api("buyDecor",{username:ME.username,decorId:id});
-  if(r.ok){ ME.coins=r.coins; ME.decor=r.decor; updateCoins(); renderShop(); loadDecor(); Sound.buy();
+  if(r.ok){ ME.coins=r.coins; ME.decor=r.decor; updateCoins(); renderShop(); loadDecor(decors); markFarmDirty(); Sound.buy();
     const it=DECOR.find(x=>x.id===id); toast(`ซื้อ${it.name} ${it.emoji}!`); }
   else toast(r.error||"ซื้อไม่สำเร็จ",1800,"var(--bad)","#3a0000"); }
 async function buyFood(id){ const r=await api("buyFood",{username:ME.username,foodId:id});
@@ -1732,7 +1808,7 @@ function renderPetCare(){ const a=animals[selectedAnimalIndex]; if(!a)return clo
   drawPetPreview(a,item);
   document.getElementById("accessoryGrid").innerHTML=PET_ACCESSORIES.map(it=>`
     <div class="shopCard accessoryCard ${it.id===current?"on":""}">
-      <div class="pe">${it.emoji}</div><div class="pn">${it.name}</div>
+      ${it.color?`<div class="accessoryColor" style="background:${it.color}" aria-label="${it.name}"></div>`:`<div class="pe">${it.emoji}</div>`}<div class="pn">${it.name}</div>
       <button class="btn sm" ${(ME.petFood||0)>0?"":"disabled"} onclick="feedSelectedPet('${it.id}')">
         ${it.id===current?"ใส่อยู่ · เปลี่ยนใหม่":"🥕 ให้อาหารและใส่"}</button>
     </div>`).join("");
@@ -1747,12 +1823,12 @@ async function feedSelectedPet(accessory){ const a=animals[selectedAnimalIndex];
   const r=await api("feedPet",{username:ME.username,petKey:a.key,accessory});
   if(!r.ok){ document.getElementById("petCareMsg").textContent=r.error||"ให้อาหารไม่สำเร็จ"; return; }
   ME.petFood=r.petFood; ME.petStyles=r.petStyles||{}; Sound.buy(); Sound.animal(a.type); renderPetCare();
-  const item=PET_ACCESSORIES.find(x=>x.id===accessory); toast(`${a.emoji} ได้${item.name}แล้ว! ${item.emoji}`,1900,"#ff9d3e","#351600");
+  const item=PET_ACCESSORIES.find(x=>x.id===accessory); toast(`${a.emoji} ได้${item.name}แล้ว!`,1900,"#ff9d3e","#351600");
 }
 
 /* ---- render loop ---- */
 let animalTimer=240;
-function farmLoop(){ if(!farmActive){farmRAF=0;return;} farmT++;
+function farmLoop(){ if(!farmActive){farmRAF=0;return;} if(document.hidden){farmRAF=0;return;} farmT++;
   if(!qOpen) stepPlayer(); animals.forEach((a,i)=>{if(!(farmDrag?.kind==="animal"&&farmDrag.index===i))stepAnimal(a);});
   trees.forEach(t=>{ if(!t.alive && farmT>=t.regrow){ t.alive=true; t.q=randomQ(); } });
   if(animals.length && --animalTimer<=0){ animalTimer=200+Math.random()*280;
@@ -1845,9 +1921,9 @@ function drawFarm(){ const c=document.getElementById("island"); if(!c) return; c
   drawField(x,W,H);drawZoneLayout(x);
   let hint=-1,best=80; if(player) trees.forEach((t,i)=>{ if(!t.alive)return; const d=Math.hypot(t.x-player.x,t.y-player.y); if(d<best){best=d;hint=i;} });
   const ents=[];
-  decors.forEach(d=>ents.push({y:d.y,f:()=>drawDecor(x,d)}));
+  decors.forEach((d,i)=>ents.push({y:d.y,f:()=>drawDecor(x,d,i)}));
   trees.forEach((t,i)=>{ if(t.alive) ents.push({y:t.y,f:()=>drawTree(x,t,i===hint)}); });
-  animals.forEach(a=>ents.push({y:a.y,f:()=>drawAnimal(x,a)}));
+  animals.forEach((a,i)=>ents.push({y:a.y,f:()=>drawAnimal(x,a,i)}));
   if(player) ents.push({y:player.y,f:()=>drawPlayer(x)});
   ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
   const shade=x.createLinearGradient(0,0,0,H);shade.addColorStop(0,"rgba(15,79,91,.035)");shade.addColorStop(.7,"rgba(11,70,42,0)");shade.addColorStop(1,"rgba(19,78,41,.1)");x.fillStyle=shade;x.fillRect(0,0,W,H);
@@ -1866,7 +1942,8 @@ function updateFarmCamera(c){
   const shift=Math.max(-overflow,Math.min(overflow,desired));
   setShift(`${shift.toFixed(1)}px`);
 }
-function drawDecor(x,d){ const s=depth(d.y); x.save(); x.translate(d.x,d.y);
+function drawDecor(x,d,index){ const s=depth(d.y); x.save(); x.translate(d.x,d.y);
+  if(farmDrag?.kind==="decor"&&farmDrag.index===index){x.fillStyle="rgba(255,237,92,.28)";x.strokeStyle="#fff06a";x.lineWidth=3;el(x,0,-18*s,decorHitRadius(d)*1.15*s,decorHitRadius(d)*.72*s);x.fill();x.stroke();}
   if(d.type==="house") drawHouse(x,s); else if(d.type==="fence") drawFence(x,s,d.orientation);
   else if(d.type==="fountain") drawFountain(x,s); else if(d.type==="statue") drawStatue(x,s);
   else drawFlower(x,s); x.restore(); }
@@ -1966,10 +2043,10 @@ function drawTree(x,t,hi){ const s=depth(t.y), tx=t.x, ty=t.y, level=questionDif
   if(hi){ x.font=`${Math.round(30*s)}px serif`; x.textAlign="center"; x.textBaseline="alphabetic";
     x.fillText("🪓",tx+R+8*s,fy-Math.sin(farmT/6)*3); } }
 function animalTypeScale(type){return ({fish:.62,duck:.78,chicken:.86,pug:.92,pig:1.04,sheep:1.08,cow:1.28})[type]||1;}
-function drawAnimal(x,a){ const s=depth(a.y)*animalTypeScale(a.type), mv=a.pause<=0;
+function drawAnimal(x,a,index){ const s=depth(a.y)*animalTypeScale(a.type), mv=a.pause<=0;
   const bounce=reduceFarmMotion?0:mv?Math.sin(farmT*.28+a.phase)*1.25:Math.sin(farmT*.045+a.phase)*.55;
   const squash=reduceFarmMotion?1:mv?1+Math.sin(farmT*.28+a.phase)*.025:1;
-  x.save(); x.translate(a.x,a.y+bounce); x.scale(s/squash,s*squash); if(a.dir<0)x.scale(-1,1);
+  x.save(); x.translate(a.x,a.y+bounce); if(farmDrag?.kind==="animal"&&farmDrag.index===index){x.fillStyle="rgba(255,237,92,.3)";x.strokeStyle="#fff06a";x.lineWidth=3/s;el(x,0,-17,29,25);x.fill();x.stroke();} x.scale(s/squash,s*squash); if(a.dir<0)x.scale(-1,1);
   const accessory=PET_ACCESSORIES.find(it=>it.id===(ME.petStyles?.[a.key]||""));
   if(a.type!=="fish"){ x.fillStyle="rgba(66,44,28,.2)"; el(x,0,1,a.type==="cow"?22:a.type==="pug"?19:17,5); x.fill(); }
   if(accessory?.id==="bag")drawPetWear(x,a.type,accessory);
@@ -2079,6 +2156,11 @@ addEventListener("beforeunload",e=>{
   if(!customizeDirty && !farmDirty) return;
   e.preventDefault();
   e.returnValue="";
+});
+setInterval(()=>{ if(farmActive&&farmDirty&&!qOpen&&!document.hidden) saveFarmState(true); },30000);
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){ if(farmActive&&farmDirty&&!qOpen)saveFarmState(true); return; }
+  if(farmActive&&!farmRAF)farmLoop();
 });
 (async function boot(){
   const s=localStorage.getItem("cb_session"), token=localStorage.getItem("cb_token");
